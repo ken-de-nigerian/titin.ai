@@ -1,0 +1,95 @@
+.irShell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+}
+
+.irTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.irExit {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.irStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.irPulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.85);
+  animation: irPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes irPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.irSpacer {
+  width: 36px;
+}
+
+.irCenter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 18px;
+}
+
+.irPrompt {
+  margin-top: 26px;
+  text-align: center;
+  max-width: 720px;
+}
+
+.irLabel {
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.irLine {
+  margin-top: 14px;
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.irBottom {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
