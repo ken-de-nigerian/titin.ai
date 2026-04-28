@@ -2,9 +2,9 @@
     import type { AgentState } from '@blockgain/livekit-vue';
     import { useLocalParticipant, useRoomContext, useVoiceAssistant } from '@blockgain/livekit-vue';
     import { useWindowSize } from '@vueuse/core';
-    import { Mic, X, Pause, MessageSquare } from 'lucide-vue-next';
     import type { Participant, TranscriptionSegment } from 'livekit-client';
     import { ConnectionState, isLocalParticipant, RoomEvent } from 'livekit-client';
+    import { Mic, X, Pause, MessageSquare } from 'lucide-vue-next';
     import { computed, ref, watch } from 'vue';
 
     import type { OrbState } from '@/components/Orb.vue';
@@ -46,9 +46,11 @@
     const { width: viewportW } = useWindowSize();
     const orbDisplaySize = computed(() => {
         const w = viewportW.value;
+
         if (w < 400) {
             return Math.max(220, w - 40);
         }
+
         if (w < 640) {
             return 300;
         }
@@ -106,6 +108,7 @@
                     transcriptMessages.value.splice(idx, 1, row);
                 } else {
                     transcriptMessages.value.push(row);
+
                     if (!seg.final) {
                         userPartialRowIndex.set(id, transcriptMessages.value.length - 1);
                     }
@@ -137,6 +140,7 @@
                         latestAgentLine.value = text;
 
                         const id = segmentKey(seg);
+
                         if (seg.final && !seenFinalAgentIds.has(id)) {
                             seenFinalAgentIds.add(id);
                             transcriptMessages.value.push({

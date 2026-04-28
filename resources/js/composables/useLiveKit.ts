@@ -44,9 +44,11 @@ export async function fetchLiveKitToken(
     opts?: { job_role?: string; interview_type?: string },
 ): Promise<string> {
     const params = new URLSearchParams({ name });
+
     if (opts?.job_role?.trim()) {
         params.set('job_role', opts.job_role.trim());
     }
+
     if (opts?.interview_type?.trim()) {
         params.set('interview_type', opts.interview_type.trim());
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { Head, Link } from '@inertiajs/vue3';
-    import { ArrowRight, Check, Mic, BarChart3, Sparkles, Target, Clock, Shield, Star, ChevronDown, Play } from 'lucide-vue-next';
     import { useWindowSize } from '@vueuse/core';
+    import { ArrowRight, Check, Mic, BarChart3, Sparkles, Target, Clock, Shield, Star, ChevronDown, Play } from 'lucide-vue-next';
     import { computed, ref } from 'vue';
 
     import Orb from '@/components/Orb.vue';
@@ -66,12 +66,15 @@
     const { width: windowWidth } = useWindowSize();
     const heroOrbSize = computed(() => {
         const w = windowWidth.value;
+
         if (w < 380) {
             return Math.max(240, w - 32);
         }
+
         if (w < 768) {
             return Math.min(340, Math.round(w * 0.72));
         }
+
         return 420;
     });
 
