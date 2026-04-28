@@ -13,8 +13,7 @@
             <li
                 v-for="s in items"
                 :key="s"
-                class="flex items-start gap-3 text-sm"
-            >
+                class="flex items-start gap-3 text-sm">
                 <div
                     :class="[
                         'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',

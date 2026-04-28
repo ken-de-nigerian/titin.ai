@@ -34,11 +34,9 @@
         speaker: 'user' | 'agent';
         text: string;
         timestamp: Date;
-        /** Live STT segment id — used to merge partials into one bubble */
         segmentId?: string;
     }
 
-    /** Keep the reactive object intact — destructuring breaks updates (agent/state stay stale). */
     const voiceAssistant = useVoiceAssistant();
     const room = useRoomContext();
     const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
@@ -71,14 +69,9 @@
         thinking: 'Thinking',
     };
 
-    /** Agent caption under the orb — empty until we receive real transcription. */
     const latestAgentLine = ref('');
     const hasAgentCaption = computed(() => latestAgentLine.value.trim().length > 0);
 
-    /**
-     * LiveKit Agents stream STT/TTS via RoomEvent.TranscriptionReceived.
-     * User STT often sends non-final segments first; we merge partials by segment id.
-     */
     watch(
         () => room.value,
         (r, _prev, onCleanup) => {
@@ -87,7 +80,6 @@
             }
 
             const seenFinalAgentIds = new Set<string>();
-            /** segment id → index in transcriptMessages for in-flight user STT */
             const userPartialRowIndex = new Map<string, number>();
 
             function segmentKey(seg: TranscriptionSegment): string {
@@ -244,10 +236,7 @@
 
         <!-- Top bar -->
         <div class="relative z-10 flex items-center justify-between border-b border-hairline bg-background/70 px-6 py-3.5 backdrop-blur-xl">
-            <button
-                class="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-medium shadow-xs transition hover:bg-surface-2"
-                @click="emitEnd"
-            >
+            <button class="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-medium shadow-xs transition hover:bg-surface-2" @click="emitEnd">
                 <X class="h-3.5 w-3.5" />
                 End
             </button>
@@ -268,11 +257,7 @@
 
         <!-- Center -->
         <div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
-            <Orb
-                :state="orbState"
-                :size="orbDisplaySize"
-                interactive
-            />
+            <Orb :state="orbState" :size="orbDisplaySize" interactive/>
 
             <Transition
                 v-if="true"
@@ -283,12 +268,10 @@
                 enter-to-class="opacity-100 translate-y-0"
                 leave-active-class="transition-all duration-250"
                 leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-1.5"
-            >
+                leave-to-class="opacity-0 -translate-y-1.5">
                 <div
                     v-if="true"
-                    class="mt-12 max-w-2xl text-center"
-                >
+                    class="mt-12 max-w-2xl text-center">
                     <p class="text-xs font-medium uppercase tracking-wider text-brand">
                         {{ labels[orbState] }}
                     </p>
@@ -298,8 +281,7 @@
                             hasAgentCaption
                                 ? 'text-2xl font-medium'
                                 : 'text-lg font-normal text-muted-foreground md:text-xl'
-                        "
-                    >
+                        ">
                         {{
                             hasAgentCaption
                                 ? latestAgentLine
@@ -311,9 +293,7 @@
 
             <!-- Progress chips -->
             <div class="mt-12 flex items-center gap-1.5">
-                <div
-                    v-for="n in 6"
-                    :key="n"
+                <div v-for="n in 6" :key="n"
                     :class="[
                         'h-1 rounded-full transition',
                         n < 3 ? 'w-8 bg-brand' : n === 3 ? 'w-12 bg-foreground' : 'w-8 bg-hairline',
@@ -328,36 +308,35 @@
             <div class="flex items-center gap-3">
                 <button
                     class="grid h-11 w-11 place-items-center rounded-full border border-hairline bg-surface text-muted-foreground shadow-xs transition hover:text-foreground"
-                    aria-label="Pause"
-                >
+                    aria-label="Pause">
                     <Pause class="h-4 w-4" />
                 </button>
+
                 <button
                     :class="[
                         'group relative grid h-16 w-16 place-items-center rounded-full shadow-lg transition hover:scale-[1.04] active:scale-100',
                         isMicrophoneEnabled ? 'bg-foreground text-background' : 'bg-surface border border-hairline text-foreground',
                     ]"
                     aria-label="Toggle microphone"
-                    @click="toggleMic"
-                >
+                    @click="toggleMic">
                     <span
                         v-if="isUserSpeaking"
                         class="absolute inset-0 animate-ping rounded-full bg-brand/40"
                     />
                     <Mic class="relative h-6 w-6" />
                 </button>
+
                 <button
                     class="grid h-11 w-11 place-items-center rounded-full border border-hairline bg-surface text-muted-foreground shadow-xs transition hover:text-foreground"
                     aria-label="Show transcript"
-                    @click="toggleTranscript"
-                >
+                    @click="toggleTranscript">
                     <MessageSquare class="h-4 w-4" />
                 </button>
             </div>
+
             <button
-                class="text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                @click="emitEnd"
-            >
+                class="text-xs font-medium text-muted-foreground transition hover:text-foreground cursor-pointer"
+                @click="emitEnd">
                 End session and view feedback
             </button>
         </div>
