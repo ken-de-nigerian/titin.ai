@@ -30,7 +30,7 @@ it('renders feedback after analyzing a transcript', function () {
 
     config(['services.openai.api_key' => 'sk-test-key']);
 
-    $response = $this->post(route('feedback.analyze'), [
+    $response = $this->withoutMiddleware()->post(route('user.feedback.analyze'), [
         'messages' => [
             ['speaker' => 'agent', 'text' => 'Tell me about a project.'],
             ['speaker' => 'user', 'text' => 'I shipped a billing migration.'],

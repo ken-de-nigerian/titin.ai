@@ -6,8 +6,7 @@ import { MotionPlugin } from 'motion-v';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
-
-import { Ziggy } from './ziggy';
+import type { ZiggyConfig } from '@/types/ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'VoiceFlow AI';
 
@@ -19,9 +18,9 @@ createInertiaApp({
             import.meta.glob<DefineComponent>('./pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        const app = createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(ZiggyVue, Ziggy as never)
+            .use(ZiggyVue)
             .use(MotionPlugin, {
                 presets: {
                     'fade-up': {
@@ -40,8 +39,11 @@ createInertiaApp({
                         transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
                     },
                 },
-            })
-            .mount(el);
+            });
+        
+        app.config.globalProperties.$ziggy = props.initialPage.props.ziggy as ZiggyConfig;
+
+        app.mount(el);
     },
     progress: {
         color: '#1b1b18',

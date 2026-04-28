@@ -4,10 +4,13 @@
     import { ArrowRight, Check, Mic, BarChart3, Sparkles, Target, Clock, Shield, Star, ChevronDown, Play } from 'lucide-vue-next';
     import { computed, ref } from 'vue';
 
+    import SiteFooter from '@/components/layouts/SiteFooter.vue';
+    import SiteHeader from '@/components/layouts/SiteHeader.vue';
     import Orb from '@/components/Orb.vue';
     import ProductMockSession from '@/components/ProductMockSession.vue';
-    import SiteFooter from '@/components/SiteFooter.vue';
-    import SiteHeader from '@/components/SiteHeader.vue';
+    import { useRoute } from '@/composables/useRoute';
+
+    const route = useRoute();
 
     const logos = ['Stripe', 'Linear', 'Notion', 'Figma', 'Vercel', 'Ramp'];
 
@@ -123,7 +126,7 @@
 
                         <div class="mt-8 flex flex-wrap items-center gap-3">
                             <Link
-                                :href="route('interview')"
+                                :href="route('user.interview.index')"
                                 class="group inline-flex items-center gap-2 rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background shadow-md transition hover:bg-foreground/90"
                             >
                                 Start a free session
@@ -260,7 +263,7 @@
                             </li>
                         </ul>
                         <Link
-                            :href="route('interview')"
+                            :href="route('user.interview.index')"
                             class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
                         >
                             Try a 5-minute session <ArrowRight class="h-4 w-4" />
@@ -387,7 +390,7 @@
                     </div>
 
                     <Link
-                        :href="route('interview')"
+                        :href="route('user.interview.index')"
                         :class="[
                             'mt-7 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition',
                             t.featured
@@ -470,7 +473,7 @@
                     </div>
                     <div class="md:col-span-4 md:text-right">
                         <Link
-                            :href="route('interview')"
+                            :href="route('user.interview.index')"
                             class="inline-flex items-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-background/90"
                         >
                             Start free

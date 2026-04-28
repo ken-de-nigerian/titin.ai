@@ -1,21 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Contracts\Auth\PostLoginRedirectContract;
+use App\Contracts\User\CandidateResumeStorageContract;
+use App\Services\Auth\PostLoginRedirectService;
+use App\Services\User\CandidateResumeStorageService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
-class AppServiceProvider extends ServiceProvider
+final class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PostLoginRedirectContract::class, PostLoginRedirectService::class);
+        $this->app->bind(CandidateResumeStorageContract::class, CandidateResumeStorageService::class);
     }
 
     /**

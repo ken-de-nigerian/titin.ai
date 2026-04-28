@@ -38,11 +38,24 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'name' => config('app.name'),
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+                'info' => fn () => $request->session()->get('info'),
+                'title' => fn () => $request->session()->get('title'),
+                'duration' => fn () => $request->session()->get('duration'),
+            ],
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
+                    'email_verified' => (bool) $request->user()->hasVerifiedEmail(),
+                    'job_role' => $request->user()->job_role,
+                    'interview_type' => $request->user()->interview_type,
+                    'onboarding_completed' => $request->user()->onboarding_completed_at !== null,
                 ] : null,
             ],
             'ziggy' => [
