@@ -1,7 +1,8 @@
 <script setup lang="ts">
-    import { ChevronDown, Search } from 'lucide-vue-next';
-    import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+    import { Check, ChevronDown } from 'lucide-vue-next';
+    import { computed } from 'vue';
     import InputError from '@/components/InputError.vue';
+    import UiDropdown from '@/components/ui/UiDropdown.vue';
 
     function messageFromError(error: string | string[] | undefined | null): string {
         if (!error) {
@@ -22,7 +23,7 @@
     const props = withDefaults(
         defineProps<{
             modelValue: string | null | undefined;
-            options: SelectOption[];
+            options: readonly SelectOption[];
             placeholder?: string;
             id?: string;
             error?: string | string[];
@@ -42,10 +43,6 @@
         'update:modelValue': [value: string];
         'user-interacted': [];
     }>();
-
-    const showDropdown = ref(false);
-    const searchQuery = ref('');
-    const dropdownRef = ref<HTMLElement | null>(null);
 
     const displayError = computed(() => messageFromError(props.error));
 
@@ -76,22 +73,10 @@
         return selectedOption.value?.label || props.placeholder || 'Select an option';
     });
 
-    const filteredOptions = computed(() => {
-        const query = searchQuery.value.toLowerCase();
-
-        return props.options.filter((option) => option.label.toLowerCase().includes(query));
-    });
-
     const triggerClass = computed(() =>
         [
-            'input',
-            'input-md',
             'h-9',
-            'block',
             'w-full',
-            'shadow-sm',
-            'border',
-            'input-focus',
             'flex',
             'items-center',
             'justify-between',
@@ -99,114 +84,102 @@
             'px-3',
             'text-left',
             props.disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
-            'rounded-md',
-            isInvalid.value ? 'input-invalid' : undefined,
+            'rounded-lg',
+            'border',
+            'border-input',
+            'bg-background',
+            'text-sm',
+            'text-foreground',
+            'shadow-xs',
+            'outline-none',
+            'transition',
+            'hover:bg-surface-2/40',
+            'focus-visible:border-ring',
+            'focus-visible:ring-2',
+            'focus-visible:ring-ring/20',
+            isInvalid.value ? 'border-destructive ring-2 ring-destructive/20' : undefined,
         ].filter(Boolean),
     );
 
-    const selectOption = (option: SelectOption) => {
+    const menuClass = computed(() =>
+        [
+            'z-50',
+            'z-[220]',
+            'max-h-[min(320px,50vh)]',
+            'min-w-32',
+            'overflow-x-hidden',
+            'overflow-y-auto',
+            'rounded-xl',
+            'bg-popover',
+            'text-popover-foreground',
+            'p-1',
+            'ring-1',
+            'ring-foreground/10',
+            'shadow-sm',
+            'outline-none',
+            'border'
+        ].join(' '),
+    );
+
+    const selectOption = (option: SelectOption, close: () => void) => {
         const valueToEmit = String(option.value).trim();
         emit('update:modelValue', valueToEmit);
-        showDropdown.value = false;
+        close();
         emit('user-interacted');
     };
-
-    function toggleTrigger(): void {
-        if (props.disabled) {
-            return;
-        }
-
-        showDropdown.value = !showDropdown.value;
-        emit('user-interacted');
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-            showDropdown.value = false;
-        }
-    };
-
-    onMounted(() => {
-        document.addEventListener('click', handleClickOutside);
-    });
-
-    onBeforeUnmount(() => {
-        document.removeEventListener('click', handleClickOutside);
-    });
-
-    watch(
-        () => showDropdown.value,
-        (isOpened) => {
-            if (isOpened) {
-                searchQuery.value = '';
-            }
-        },
-    );
 </script>
 
 <template>
-    <div class="relative w-full" ref="dropdownRef">
-        <button
-            :id="id"
-            type="button"
-            :class="triggerClass"
-            :disabled="disabled"
-            :aria-expanded="showDropdown"
-            :aria-haspopup="true"
-            :aria-invalid="isInvalid ? 'true' : undefined"
-            @click="toggleTrigger"
+    <div class="w-full">
+        <UiDropdown
+            align="stretch"
+            :teleport-to-body="true"
+            :menu-class="menuClass"
         >
-            <span
-                :class="[
-                    'min-w-0 flex-1 truncate text-sm',
-                    selectedOption ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400',
-                ]"
-            >
-                <slot name="default" :selectedOption="selectedOption" :selectedLabel="selectedLabel">
-                    {{ selectedLabel }}
-                </slot>
-            </span>
-            <ChevronDown
-                class="size-4 shrink-0 text-gray-500 transition-transform dark:text-gray-400"
-                :class="{ 'rotate-180': showDropdown }"
-                aria-hidden="true"
-            />
-        </button>
-
-        <div
-            v-if="showDropdown"
-            class="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
-        >
-            <div class="border-b border-gray-200 p-3 dark:border-gray-700">
-                <div class="relative">
-                    <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Filter options..."
-                        class="input input-md h-9 w-full rounded-md border border-gray-200 py-2 pl-10 pr-4 text-sm shadow-sm input-focus dark:border-gray-600"
-                    />
-                </div>
-            </div>
-
-            <div class="max-h-64 overflow-y-auto">
-                <div v-if="filteredOptions.length === 0" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No matching options found
-                </div>
+            <template #trigger="{ open, toggle }">
                 <button
-                    v-for="option in filteredOptions"
-                    :key="String(option.value)"
+                    :id="id"
                     type="button"
-                    class="flex w-full cursor-pointer items-center justify-between p-3 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
-                    @click="selectOption(option)"
+                    :class="triggerClass"
+                    :disabled="disabled"
+                    :aria-expanded="open"
+                    aria-label="Select an option"
+                    role="combobox"
+                    :aria-invalid="isInvalid ? 'true' : undefined"
+                    @click.stop="!disabled && toggle()"
                 >
-                    <slot name="option" :option="option">
-                        <span>{{ option.label }}</span>
-                    </slot>
+                    <span class="min-w-0 flex-1 truncate text-sm" :class="selectedOption ? 'text-foreground' : 'text-muted-foreground'">
+                        <slot name="default" :selected-option="selectedOption" :selected-label="selectedLabel">
+                            {{ selectedLabel }}
+                        </slot>
+                    </span>
+                    <ChevronDown class="size-4 shrink-0 text-muted-foreground transition-transform duration-200" :class="open ? 'rotate-180' : ''" aria-hidden="true" />
                 </button>
-            </div>
-        </div>
+            </template>
 
+            <template #menu="{ close }">
+                <ul class="m-0 list-none p-0" role="presentation">
+                    <li
+                        v-for="option in options"
+                        :key="String(option.value)"
+                        role="menuitem"
+                        tabindex="-1"
+                        class="group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground"
+                        :class="String(option.value).trim() === String(modelValue ?? '').trim() ? 'bg-accent font-medium text-accent-foreground' : ''"
+                        :aria-selected="String(option.value).trim() === String(modelValue ?? '').trim()"
+                        @click="selectOption(option, close)">
+                        <slot name="option" :option="option">
+                            <span>{{ option.label }}</span>
+                        </slot>
+                        <Check
+                            v-if="String(option.value).trim() === String(modelValue ?? '').trim()"
+                            class="ml-auto size-4 text-current"
+                            aria-hidden="true"
+                        />
+                    </li>
+                </ul>
+            </template>
+        </UiDropdown>
         <InputError :message="displayError" />
     </div>
 </template>

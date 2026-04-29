@@ -2,8 +2,8 @@
     import { Head, useForm } from '@inertiajs/vue3';
     import ActionButton from "@/components/ActionButton.vue";
     import FormInput from "@/components/FormInput.vue";
-    import AuthLayout from "@/components/layouts/AuthLayout.vue";
-    import AuthSidebar from "@/components/layouts/AuthSidebar.vue";
+    import AuthLayout from "@/layouts/AuthLayout.vue";
+    import AuthSidebar from "@/layouts/AuthSidebar.vue";
     import TextLink from "@/components/TextLink.vue";
     import { useRoute } from '@/composables/useRoute';
 

@@ -7,13 +7,7 @@
         defineProps<{
             placement?: 'above' | 'below';
             align?: 'start' | 'end' | 'stretch';
-            /** Extra classes on the inner `<ul class="dropdown-menu">` (e.g. `min-w-[150px]`). */
             menuClass?: string;
-            /**
-             * When true (default), the menu is teleported to `document.body` with fixed coordinates
-             * (updates on scroll). When false, the menu is absolutely positioned under the trigger
-             * inside the component, matching document flow like `CustomSelectDropdown`.
-             */
             teleportToBody?: boolean;
         }>(),
         {
@@ -62,7 +56,6 @@
 
     const stopPositionListeners: Array<() => void> = [];
 
-    /** Scroll containers between the trigger and the viewport (window scroll is appended last). */
     function getScrollParents(node: HTMLElement | null): (HTMLElement | Window)[] {
         const list: (HTMLElement | Window)[] = [];
 
@@ -99,8 +92,6 @@
         return list;
     }
 
-    // Use root + ignore panel. A computed array of elements breaks VueUse: it treats non-Elements as
-    // component instances and reads vm.$.subTree (throws on plain arrays).
     onClickOutside(
         rootRef,
         () => {
@@ -241,7 +232,7 @@
                 ref="panelRef"
                 data-dropdown-panel
                 tabindex="-1"
-                :class="panelPositionClass"
+                :class="[panelPositionClass, menuClass]"
                 :style="teleportToBody ? panelStyles : undefined"
                 role="menu"
                 aria-orientation="vertical"

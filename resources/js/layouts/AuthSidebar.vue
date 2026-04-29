@@ -95,11 +95,11 @@
 
                     <!-- Animated speech waveform -->
                     <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-[3px]" style="height: 20px;">
+                        <div class="flex items-center gap-0.75" style="height: 20px;">
                             <div
                                 v-for="(bar, i) in bars"
                                 :key="i"
-                                class="speech-bar w-[3px] rounded-full"
+                                class="speech-bar w-0.75 rounded-full"
                                 :style="{
                                     animationDelay: bar.delay,
                                     animationDuration: bar.duration,

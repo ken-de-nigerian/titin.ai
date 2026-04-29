@@ -12,11 +12,7 @@ const appName = import.meta.env.VITE_APP_NAME || 'VoiceFlow AI';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
-    resolve: (name) =>
-        resolvePageComponent(
-            `./pages/${name}.vue`,
-            import.meta.glob<DefineComponent>('./pages/**/*.vue'),
-        ),
+    resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) })
             .use(plugin)
@@ -40,7 +36,7 @@ createInertiaApp({
                     },
                 },
             });
-        
+
         app.config.globalProperties.$ziggy = props.initialPage.props.ziggy as ZiggyConfig;
 
         app.mount(el);

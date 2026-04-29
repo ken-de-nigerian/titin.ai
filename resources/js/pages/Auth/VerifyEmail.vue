@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { Head, router } from '@inertiajs/vue3';
     import ActionButton from '@/components/ActionButton.vue';
-    import AuthLayout from '@/components/layouts/AuthLayout.vue';
-    import AuthSidebar from '@/components/layouts/AuthSidebar.vue';
+    import AuthLayout from '@/layouts/AuthLayout.vue';
+    import AuthSidebar from '@/layouts/AuthSidebar.vue';
     import { useRoute } from '@/composables/useRoute';
 
     const route = useRoute();

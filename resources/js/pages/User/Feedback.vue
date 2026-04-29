@@ -1,11 +1,11 @@
 <script setup lang="ts">
     import { Head, Link } from '@inertiajs/vue3';
-    import { ArrowRight, TrendingUp, Sparkles, Download, Share2 } from 'lucide-vue-next';
+    import { ArrowRight, TrendingUp, Sparkles } from 'lucide-vue-next';
     import { computed, ref, watch } from 'vue';
 
-    import SiteHeader from '@/components/layouts/SiteHeader.vue';
     import Panel from '@/components/Panel.vue';
     import ScoreRing from '@/components/ScoreRing.vue';
+    import SnapCarousel from '@/components/SnapCarousel.vue';
     import { useRoute } from '@/composables/useRoute';
     import type { SessionFeedbackPayload } from '@/types/sessionFeedback';
 
@@ -35,6 +35,14 @@
             props.feedback?.session_summary_line ??
             'Complete a voice session to receive tailored feedback.',
     );
+
+    const metaLine = computed(() => {
+        if (props.feedback?.headline_title) {
+            return `Session complete · ${props.feedback.headline_title}`;
+        }
+
+        return 'Session complete · Practice session';
+    });
 
     const topInsight = computed(
         () =>
@@ -71,137 +79,88 @@
 </script>
 
 <template>
-    <Head title="Session feedback — Lumen" />
+  <Head title="Session feedback" />
 
-    <div class="min-h-screen bg-surface-2/40">
-        <SiteHeader />
+  <div class="feedback">
+    <!-- ── Hero (PWA shell provides header) ─────────────────── -->
+    <section class="feedback-hero">
+      <p class="feedback-meta">{{ metaLine }}</p>
 
-        <main class="mx-auto max-w-7xl px-6 py-10 md:py-14">
-            <!-- Header card -->
-            <div class="surface relative overflow-hidden rounded-2xl p-8 shadow-sm md:p-10">
-                <div class="pointer-events-none absolute inset-0 hero-wash opacity-70" />
-                <div class="relative grid gap-10 md:grid-cols-12 md:items-center">
-                    <div class="md:col-span-7">
-                        <div class="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1 text-xs font-medium shadow-xs">
-                            <span class="h-1.5 w-1.5 rounded-full bg-success" />
-                            Session complete
-                        </div>
-                        <h1 class="mt-5 text-balance text-3xl font-semibold tracking-tight md:text-5xl">
-                            {{ headlineTitle }}
-                        </h1>
-                        <p class="mt-3 text-sm text-muted-foreground">
-                            {{ sessionSummaryLine }}
-                        </p>
+      <div class="feedback-hero-row">
+        <div class="feedback-hero-left">
+          <h1 class="feedback-title">{{ headlineTitle }}</h1>
+          <p class="feedback-sub">{{ sessionSummaryLine }}</p>
+        </div>
 
-                        <div class="mt-6 flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                class="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-medium shadow-xs transition hover:bg-surface-2"
-                            >
-                                <Download class="h-3.5 w-3.5" />
-                                Download report
-                            </button>
-                            <button
-                                type="button"
-                                class="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-medium shadow-xs transition hover:bg-surface-2"
-                            >
-                                <Share2 class="h-3.5 w-3.5" />
-                                Share
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-5">
-                        <div class="surface flex items-center gap-6 rounded-2xl p-6 shadow-md">
-                            <ScoreRing
-                                v-if="hasScores"
-                                :value="score"
-                            />
-                            <div
-                                v-else
-                                class="grid h-24 w-24 shrink-0 place-items-center rounded-full border border-dashed border-hairline text-xs text-muted-foreground"
-                            >
-                                —
-                            </div>
-                            <div>
-                                <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                    Overall score
-                                </p>
-                                <p class="mt-1 flex items-baseline gap-1">
-                                    <template v-if="hasScores">
-                                        <span class="text-4xl font-semibold tabular-nums">{{ score.toFixed(1) }}</span>
-                                        <span class="text-sm text-muted-foreground">/ 10</span>
-                                    </template>
-                                    <span
-                                        v-else
-                                        class="text-sm text-muted-foreground"
-                                    >
-                                        Run a session to generate scores
-                                    </span>
-                                </p>
-                                <p
-                                    v-if="hasScores"
-                                    class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-success"
-                                >
-                                    <TrendingUp class="h-3 w-3" /> Coaching ready
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="feedback-hero-right">
+          <div class="feedback-score-card">
+            <ScoreRing v-if="hasScores" :value="score" />
+            <div v-else class="feedback-score-empty">—</div>
+            <div class="feedback-score-text">
+              <p class="feedback-score-label">Overall score</p>
+              <p class="feedback-score-value">
+                <template v-if="hasScores">
+                  {{ score.toFixed(1) }}<span class="feedback-score-den">/ 10</span>
+                </template>
+                <span v-else class="feedback-score-none">Run a session to generate scores</span>
+              </p>
+              <p v-if="hasScores" class="feedback-score-ready">
+                <TrendingUp class="h-3 w-3" /> Coaching ready
+              </p>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <!-- Breakdown -->
-            <div class="mt-6 grid gap-6 lg:grid-cols-3">
-                <div class="surface rounded-2xl p-6 shadow-xs lg:col-span-2">
-                    <h2 class="text-base font-semibold tracking-tight">Score breakdown</h2>
-                    <p class="mt-0.5 text-xs text-muted-foreground">By dimension</p>
+    <!-- Breakdown + insight -->
+    <section class="feedback-section">
+      <div class="feedback-grid">
+        <div class="surface rounded-2xl p-6 shadow-xs lg:col-span-2">
+          <h2 class="text-base font-semibold tracking-tight">Score breakdown</h2>
+          <p class="mt-0.5 text-xs text-muted-foreground">By dimension</p>
 
-                    <div
-                        v-if="animatedBreakdown.length === 0"
-                        class="mt-6 text-sm text-muted-foreground"
-                    >
-                        Scores appear here after your session is analyzed.
-                    </div>
+          <div v-if="animatedBreakdown.length === 0" class="mt-6 text-sm text-muted-foreground">
+            Scores appear here after your session is analyzed.
+          </div>
 
-                    <div class="mt-6 space-y-4">
-                        <div
-                            v-for="b in animatedBreakdown"
-                            :key="b.label"
-                        >
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="font-medium">{{ b.label }}</span>
-                                <span class="tabular-nums text-muted-foreground">{{ b.value.toFixed(1) }}</span>
-                            </div>
-                            <div class="mt-1.5 h-1.5 rounded-full bg-surface-2">
-                                <div
-                                    class="h-1.5 rounded-full bg-brand transition-all duration-700 ease-out"
-                                    :style="{ width: b.animated ? `${(b.value / 10) * 100}%` : '0%' }"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="surface rounded-2xl p-6 shadow-xs">
-                    <h2 class="text-base font-semibold tracking-tight">Top insight</h2>
-                    <p class="mt-0.5 text-xs text-muted-foreground">From this session</p>
-
-                    <p class="mt-5 text-sm leading-relaxed">
-                        {{ topInsight }}
-                    </p>
-
-                    <Link
-                        :href="route('user.interview.index')"
-                        class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
-                    >
-                        Practice again <ArrowRight class="h-3.5 w-3.5" />
-                    </Link>
-                </div>
+          <div class="mt-6 space-y-4">
+            <div v-for="b in animatedBreakdown" :key="b.label">
+              <div class="flex items-center justify-between text-sm">
+                <span class="font-medium">{{ b.label }}</span>
+                <span class="tabular-nums text-muted-foreground">{{ b.value.toFixed(1) }}</span>
+              </div>
+              <div class="mt-1.5 h-1.5 rounded-full bg-surface-2">
+                <div
+                  class="h-1.5 rounded-full bg-brand transition-all duration-700 ease-out"
+                  :style="{ width: b.animated ? `${(b.value / 10) * 100}%` : '0%' }"
+                />
+              </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Strengths / Growth -->
-            <div class="mt-6 grid gap-6 md:grid-cols-2">
+        <div class="surface rounded-2xl p-6 shadow-xs">
+          <h2 class="text-base font-semibold tracking-tight">Top insight</h2>
+          <p class="mt-0.5 text-xs text-muted-foreground">From this session</p>
+
+          <p class="mt-5 text-sm leading-relaxed">
+            {{ topInsight }}
+          </p>
+
+          <Link
+            :href="route('user.interview.index')"
+            class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+          >
+            Practice again <ArrowRight class="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+    </section>
+
+    <!-- Strengths / Growth -->
+    <section class="feedback-section">
+      <div class="grid gap-6 md:grid-cols-2">
                 <Panel
                     v-if="strengths.length > 0"
                     title="What worked"
@@ -228,10 +187,11 @@
                     <h3 class="text-base font-semibold tracking-tight text-foreground">Where to grow</h3>
                     <p class="mt-3 leading-relaxed">Growth areas appear when we have enough dialogue to coach against.</p>
                 </div>
-            </div>
+      </div>
+    </section>
 
-            <!-- Improved answers -->
-            <section class="mt-10">
+    <!-- Improved answers -->
+    <section class="feedback-section">
                 <div class="flex items-end justify-between">
                     <div>
                         <p class="text-xs font-medium uppercase tracking-wider text-brand">Suggested rewrites</p>
@@ -249,50 +209,229 @@
                     Rewrites will appear when there is enough transcript to coach against.
                 </div>
 
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <!-- Mobile: snap carousel -->
+                <div v-if="improved.length > 0" class="mt-6 md:hidden">
+                  <SnapCarousel :show-arrows="false">
                     <article
-                        v-for="(item, i) in improved"
-                        :key="i"
-                        class="surface flex flex-col rounded-2xl p-6 shadow-xs"
+                      v-for="(item, i) in improved"
+                      :key="i"
+                      class="surface w-[86vw] max-w-sm flex flex-col rounded-2xl p-6 shadow-xs"
                     >
-                        <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Question {{ i + 1 }}
+                      <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Question {{ i + 1 }}
+                      </p>
+                      <p class="mt-3 text-sm font-medium">{{ item.question }}</p>
+
+                      <div class="mt-5 rounded-lg border border-hairline bg-surface-2/60 p-3">
+                        <p class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          Your answer
                         </p>
-                        <p class="mt-3 text-sm font-medium">{{ item.question }}</p>
+                        <p class="mt-1.5 text-sm text-muted-foreground">{{ item.your_answer_snippet }}</p>
+                      </div>
 
-                        <div class="mt-5 rounded-lg border border-hairline bg-surface-2/60 p-3">
-                            <p class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                Your answer
-                            </p>
-                            <p class="mt-1.5 text-sm text-muted-foreground">{{ item.your_answer_snippet }}</p>
-                        </div>
-
-                        <div class="mt-3 rounded-lg border border-brand/20 bg-brand-soft p-3">
-                            <p class="text-[10px] font-medium uppercase tracking-wider text-brand">
-                                Suggested rewrite
-                            </p>
-                            <p class="mt-1.5 text-sm leading-relaxed">{{ item.suggested_rewrite }}</p>
-                        </div>
+                      <div class="mt-3 rounded-lg border border-brand/20 bg-brand-soft p-3">
+                        <p class="text-[10px] font-medium uppercase tracking-wider text-brand">
+                          Suggested rewrite
+                        </p>
+                        <p class="mt-1.5 text-sm leading-relaxed">{{ item.suggested_rewrite }}</p>
+                      </div>
                     </article>
+                  </SnapCarousel>
+                </div>
+
+                <!-- Desktop: grid -->
+                <div v-if="improved.length > 0" class="mt-6 hidden gap-4 md:grid md:grid-cols-2">
+                  <article
+                    v-for="(item, i) in improved"
+                    :key="i"
+                    class="surface flex flex-col rounded-2xl p-6 shadow-xs"
+                  >
+                    <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Question {{ i + 1 }}
+                    </p>
+                    <p class="mt-3 text-sm font-medium">{{ item.question }}</p>
+
+                    <div class="mt-5 rounded-lg border border-hairline bg-surface-2/60 p-3">
+                      <p class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Your answer
+                      </p>
+                      <p class="mt-1.5 text-sm text-muted-foreground">{{ item.your_answer_snippet }}</p>
+                    </div>
+
+                    <div class="mt-3 rounded-lg border border-brand/20 bg-brand-soft p-3">
+                      <p class="text-[10px] font-medium uppercase tracking-wider text-brand">
+                        Suggested rewrite
+                      </p>
+                      <p class="mt-1.5 text-sm leading-relaxed">{{ item.suggested_rewrite }}</p>
+                    </div>
+                  </article>
                 </div>
             </section>
 
-            <!-- CTA -->
-            <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                    :href="route('user.interview.index')"
-                    class="inline-flex items-center gap-2 rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
-                >
-                    Run it again
-                    <ArrowRight class="h-4 w-4" />
-                </Link>
-                <Link
-                    :href="route('user.dashboard')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-5 py-2.5 text-sm font-medium shadow-xs transition hover:bg-surface-2"
-                >
-                    Back to dashboard
-                </Link>
-            </div>
-        </main>
-    </div>
+    <!-- CTA -->
+    <section class="feedback-cta">
+      <Link
+        :href="route('user.interview.index')"
+        class="inline-flex items-center gap-2 rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+      >
+        Run it again
+        <ArrowRight class="h-4 w-4" />
+      </Link>
+      <Link
+        :href="route('user.dashboard')"
+        class="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-5 py-2.5 text-sm font-medium shadow-xs transition hover:bg-surface-2"
+      >
+        Back to dashboard
+      </Link>
+    </section>
+  </div>
 </template>
+
+<style scoped>
+.feedback {
+  padding: 1.75rem 0 2rem;
+}
+
+.feedback-hero {
+  padding-bottom: 1.25rem;
+}
+
+.feedback-meta {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-bottom: 0.75rem;
+}
+
+.feedback-hero-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.feedback-title {
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.feedback-sub {
+  margin-top: 0.6rem;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.feedback-score-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.feedback-score-empty {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  border: 1px dashed var(--hairline);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.feedback-score-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.feedback-score-value {
+  margin-top: 0.35rem;
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.feedback-score-den {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  margin-left: 6px;
+}
+
+.feedback-score-none {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.feedback-score-ready {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.feedback-section {
+  margin-top: 1.25rem;
+}
+
+.feedback-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.feedback-cta {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .feedback {
+    padding: 2.5rem 0 2.5rem;
+  }
+
+  .feedback-hero-row {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: start;
+    gap: 1.5rem;
+  }
+
+  .feedback-title {
+    font-size: 2.25rem;
+  }
+
+  .feedback-grid {
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+}
+</style>
+
+<style scoped>
+.feedback {
+  min-height: 100%;
+}
+
+.feedback-main {
+  padding: 1.75rem 1.25rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .feedback-main {
+    padding: 2.5rem 2rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+}
+</style>

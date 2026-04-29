@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -55,6 +56,9 @@ class HandleInertiaRequests extends Middleware
                     'email_verified' => (bool) $request->user()->hasVerifiedEmail(),
                     'job_role' => $request->user()->job_role,
                     'interview_type' => $request->user()->interview_type,
+                    'profile_photo_url' => $request->user()->profile_photo_path
+                        ? Storage::disk('public')->url($request->user()->profile_photo_path)
+                        : null,
                     'onboarding_completed' => $request->user()->onboarding_completed_at !== null,
                 ] : null,
             ],

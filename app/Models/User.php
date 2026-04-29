@@ -18,8 +18,10 @@ use Illuminate\Notifications\Notifiable;
 /**
  * @property mixed $status
  * @property mixed $id
+ * @property mixed $profile_photo_path
+ * @property mixed $email
  */
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'job_role', 'interview_type', 'resume_path', 'onboarding_completed_at'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'job_role', 'interview_type', 'resume_path', 'profile_photo_path', 'onboarding_completed_at'])]
 #[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable implements MustVerifyEmail
 {

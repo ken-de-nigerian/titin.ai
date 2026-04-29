@@ -1,261 +1,543 @@
 <script setup lang="ts">
-    import { Head, Link, usePage } from '@inertiajs/vue3';
-    import { ArrowRight, ArrowUpRight, TrendingUp, Mic, Clock, Target, Plus, Search } from 'lucide-vue-next';
-    import { computed } from 'vue';
+    import {Head, usePage} from "@inertiajs/vue3";
+    import {computed} from "vue";
+    import AppLayout from "@/layouts/AppLayout.vue";
+    import TextLink from "@/components/TextLink.vue";
+    import {useRoute} from "@/composables/useRoute";
 
-    import SiteHeader from '@/components/layouts/SiteHeader.vue';
-    import { useRoute } from '@/composables/useRoute';
-
+    const page = usePage()
     const route = useRoute();
-    const page = usePage();
 
-    const showOnboardingBanner = computed(() => {
-        const user = (page.props as any).auth?.user;
+    const auth = computed(() => (page.props as any).auth)
 
-        return Boolean(user) && user.onboarding_completed === false;
-    });
+    const greeting = computed(() => {
+        const hour = new Date().getHours()
+        if (hour < 12) return 'Good morning'
+        if (hour < 17) return 'Good afternoon'
+        return 'Good evening'
+    })
 
-    const history = [
-        { role: 'Senior Product Manager', track: 'Behavioral', score: 8.6, date: 'Today', duration: '24m', trend: +0.4 },
-        { role: 'Staff Engineer', track: 'System design', score: 7.9, date: 'Yesterday', duration: '31m', trend: +0.7 },
-        { role: 'Brand Designer', track: 'Portfolio', score: 9.1, date: 'Mar 18', duration: '18m', trend: +0.2 },
-        { role: 'Engineering Manager', track: 'Leadership', score: 7.2, date: 'Mar 16', duration: '27m', trend: -0.3 },
-        { role: 'Data Scientist', track: 'Case study', score: 8.0, date: 'Mar 12', duration: '22m', trend: +0.5 },
-    ];
-
-    const stats = [
-        { label: 'Sessions', value: '23', delta: '+4 this week', icon: Mic },
-        { label: 'Average score', value: '8.2', delta: '+0.6 vs last week', icon: TrendingUp },
-        { label: 'Practice time', value: '9h 12m', delta: '+1h 30m', icon: Clock },
-        { label: 'Mastery', value: '62%', delta: 'Storytelling', icon: Target },
-    ];
-
-    const tracks = [
-        { name: 'Behavioral', sessions: 11, color: 'bg-brand' },
-        { name: 'System design', sessions: 5, color: 'bg-foreground' },
-        { name: 'Portfolio', sessions: 4, color: 'bg-success' },
-        { name: 'Case study', sessions: 3, color: 'bg-warning' },
-    ];
-
-    const scoreHistory = [6.4, 7.1, 7.0, 7.9, 8.2, 8.6];
-    const scoreDates = ['Mar 2', 'Mar 7', 'Mar 10', 'Mar 16', 'Mar 22', 'Today'];
-
-    const suggestions = [
-        { title: 'Sharpen your storytelling', desc: 'Five behavioral prompts focused on impact-first answers.', cta: 'Start track' },
-        { title: 'Mock: Senior PM loop', desc: 'A full 45-minute loop with three back-to-back rounds.', cta: 'Start mock' },
-        { title: 'Filler word coaching', desc: "Targeted drills for 'um', 'kind of', and 'I guess'.", cta: 'Begin' },
-    ];
+    const firstName = computed(() => {
+        return auth.value?.user?.name?.split(' ')[0] || 'there'
+    })
 </script>
 
 <template>
-    <Head title="Dashboard — Lumen" />
+    <Head title="Dashboard" />
 
-    <div class="min-h-screen bg-surface-2/40">
-        <SiteHeader />
+    <AppLayout>
 
-        <main class="mx-auto max-w-7xl px-6 py-10 md:py-14">
-            <!-- Greeting -->
-            <div class="flex flex-wrap items-end justify-between gap-6">
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Tuesday, March 26
-                    </p>
-                    <h1 class="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-                        Good evening, Alex
-                    </h1>
-                    <p class="mt-2 text-sm text-muted-foreground">
-                        Your last session ended at 8.6. Continue where you left off, or start something new.
-                    </p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="hidden items-center gap-2 rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-muted-foreground shadow-xs md:flex">
-                        <Search class="h-4 w-4" />
-                        <input
-                            placeholder="Search sessions"
-                            class="w-48 bg-transparent outline-none placeholder:text-muted-foreground"
-                        />
-                    </div>
-                    <Link
-                        :href="route('user.interview.index')"
-                        class="group inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
-                    >
-                        <Plus class="h-4 w-4" />
-                        New session
-                    </Link>
-                </div>
-            </div>
+        <main class="flex-1 overflow-y-auto px-5 pb-28 md:mx-auto md:w-full md:max-w-5xl md:px-0 md:pb-10">
+            <section>
+                <p class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{{ new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) }}</p>
+                <h1 class="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{{ greeting }},
+                    <span class="font-serif italic font-normal text-muted-foreground">{{ firstName }}.</span>
+                </h1>
+                <p class="mt-1.5 text-sm text-muted-foreground">Your last session ended at 8.6. Keep going.</p>
+            </section>
 
-            <div
-                v-if="showOnboardingBanner"
-                class="mt-6 flex flex-col items-start justify-between gap-4 rounded-xl border border-brand/20 bg-brand-soft p-5 shadow-xs sm:flex-row sm:items-center"
-            >
-                <div>
-                    <p class="text-sm font-semibold tracking-tight">Complete your profile</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Add your target role and interview focus so we can tailor your sessions.
-                    </p>
-                </div>
-                <Link
-                    :href="route('user.onboarding.show')"
-                    class="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
-                >
-                    Finish onboarding <ArrowRight class="h-4 w-4" />
-                </Link>
-            </div>
+            <section class="surface mt-5 relative overflow-hidden rounded-2xl border border-hairline p-5 shadow-xs">
+                <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-soft"></div>
+                <div class="relative">
+                    <p class="text-[11px] font-medium uppercase tracking-wider text-brand">Continue</p>
+                    <h2 class="mt-1 text-lg font-semibold tracking-tight">Senior PM — Behavioral</h2>
+                    <p class="mt-1 text-xs text-muted-foreground">Last score 8.6 · 3 prompts left</p>
+                    <div class="mt-4 flex items-center gap-2">
+                        <a href="/interview" class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background shadow-sm transition active:scale-[0.98]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic h-3.5 w-3.5" aria-hidden="true">
+                                <path d="M12 19v3"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                            </svg>
+                            Resume
+                        </a>
 
-            <!-- Stats -->
-            <div class="mt-10 grid gap-4 md:grid-cols-4">
-                <div
-                    v-for="s in stats"
-                    :key="s.label"
-                    class="surface rounded-xl p-5 shadow-xs"
-                >
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-medium text-muted-foreground">{{ s.label }}</p>
-                        <div class="grid h-7 w-7 place-items-center rounded-md bg-brand-soft text-brand">
-                            <component
-                                :is="s.icon"
-                                class="h-3.5 w-3.5"
-                            />
-                        </div>
-                    </div>
-                    <p class="mt-4 text-2xl font-semibold tracking-tight tabular-nums">{{ s.value }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">{{ s.delta }}</p>
-                </div>
-            </div>
-
-            <!-- Two-column area -->
-            <div class="mt-8 grid gap-6 lg:grid-cols-3">
-                <!-- Score chart -->
-                <div class="surface rounded-xl p-6 shadow-xs lg:col-span-2">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h2 class="text-base font-semibold tracking-tight">Score trajectory</h2>
-                            <p class="mt-0.5 text-xs text-muted-foreground">Last 6 sessions</p>
-                        </div>
-                        <div class="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1 text-xs font-medium text-success">
-                            <TrendingUp class="h-3 w-3" />
-                            +18%
-                        </div>
-                    </div>
-
-                    <div class="mt-8 flex h-48 items-end gap-3">
-                        <div
-                            v-for="(v, i) in scoreHistory"
-                            :key="i"
-                            class="group flex flex-1 flex-col items-center gap-2"
-                        >
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand transition-all group-hover:bg-foreground"
-                                    :style="{ height: `${(v / 10) * 100}%` }"
-                                />
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">{{ v.toFixed(1) }}</span>
-                        </div>
-                    </div>
-                    <div class="mt-2 flex justify-between text-[10px] text-muted-foreground">
-                        <span
-                            v-for="d in scoreDates"
-                            :key="d"
-                        >
-                            {{ d }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Tracks -->
-                <div class="surface rounded-xl p-6 shadow-xs">
-                    <h2 class="text-base font-semibold tracking-tight">Practice mix</h2>
-                    <p class="mt-0.5 text-xs text-muted-foreground">By interview type</p>
-
-                    <div class="mt-6 flex h-2 overflow-hidden rounded-full bg-surface-2">
-                        <div
-                            v-for="t in tracks"
-                            :key="t.name"
-                            :class="t.color"
-                            :style="{ width: `${(t.sessions / 23) * 100}%` }"
-                        />
-                    </div>
-
-                    <ul class="mt-6 space-y-3">
-                        <li
-                            v-for="t in tracks"
-                            :key="t.name"
-                            class="flex items-center justify-between text-sm"
-                        >
-                            <span class="flex items-center gap-2.5">
-                                <span :class="['h-2 w-2 rounded-full', t.color]" />
-                                {{ t.name }}
-                            </span>
-                            <span class="text-muted-foreground tabular-nums">{{ t.sessions }}</span>
-                        </li>
-                    </ul>
-
-                    <button class="mt-6 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
-                        View detailed report <ArrowRight class="h-3 w-3" />
-                    </button>
-                </div>
-            </div>
-
-            <!-- History table -->
-            <section class="mt-8">
-                <div class="surface rounded-xl shadow-xs">
-                    <div class="flex items-center justify-between border-b border-hairline px-6 py-4">
-                        <h2 class="text-base font-semibold tracking-tight">Recent sessions</h2>
-                        <button class="text-xs font-medium text-muted-foreground transition hover:text-foreground">
-                            View all
-                        </button>
-                    </div>
-
-                    <div class="divide-y divide-hairline">
-                        <Link
-                            v-for="(h, i) in history"
-                            :key="i"
-                            :href="route('user.feedback.index')"
-                            class="group flex items-center gap-6 px-6 py-4 transition hover:bg-surface-2/60"
-                        >
-                            <div class="grid h-10 w-10 place-items-center rounded-lg bg-brand-soft text-brand">
-                                <Mic class="h-4 w-4" />
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium">{{ h.role }}</p>
-                                <p class="text-xs text-muted-foreground">{{ h.track }} · {{ h.duration }}</p>
-                            </div>
-                            <span class="hidden text-xs text-muted-foreground md:inline">{{ h.date }}</span>
-                            <div class="flex items-center gap-1.5">
-                                <span
-                                    :class="[
-                                        'text-xs font-medium tabular-nums',
-                                        h.trend >= 0 ? 'text-success' : 'text-destructive',
-                                    ]"
-                                >
-                                    {{ h.trend >= 0 ? '+' : '' }}{{ h.trend }}
-                                </span>
-                            </div>
-                            <div class="w-14 text-right">
-                                <span class="text-lg font-semibold tabular-nums">{{ h.score }}</span>
-                            </div>
-                            <ArrowUpRight class="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
-                        </Link>
+                        <a href="/feedback" class="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface px-4 py-2 text-xs font-medium text-foreground transition active:scale-[0.98]">Last feedback
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right h-3 w-3" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6"></path>
+                            </svg>
+                        </a>
                     </div>
                 </div>
             </section>
 
-            <!-- Suggested -->
-            <section class="mt-8 grid gap-4 md:grid-cols-3">
-                <div
-                    v-for="c in suggestions"
-                    :key="c.title"
-                    class="surface rounded-xl p-6 shadow-xs"
-                >
-                    <h3 class="text-sm font-semibold tracking-tight">{{ c.title }}</h3>
-                    <p class="mt-2 text-sm text-muted-foreground">{{ c.desc }}</p>
-                    <button class="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline">
-                        {{ c.cta }} <ArrowRight class="h-3.5 w-3.5" />
+            <section class="mt-5 grid grid-cols-2 gap-3">
+                <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-medium text-muted-foreground">Sessions</p>
+                        <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-mic h-3 w-3"
+                                aria-hidden="true"
+                            >
+                                <path d="M12 19v3"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">23</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">+4</p>
+                </div>
+                <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-medium text-muted-foreground">Avg score</p>
+                        <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-trending-up h-3 w-3"
+                                aria-hidden="true"
+                            >
+                                <path d="M16 7h6v6"></path>
+                                <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">8.2</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">+0.6</p>
+                </div>
+                <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-medium text-muted-foreground">Practice time</p>
+                        <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-clock h-3 w-3"
+                                aria-hidden="true"
+                            >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">9h 12m</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">+1h 30m</p>
+                </div>
+                <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-medium text-muted-foreground">Mastery</p>
+                        <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-target h-3 w-3"
+                                aria-hidden="true"
+                            >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">62%</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">Story.</p>
+                </div>
+            </section>
+
+            <section class="surface mt-5 rounded-2xl border border-hairline p-5 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold tracking-tight">Score trajectory</h3>
+                        <p class="text-[11px] text-muted-foreground">Last 6 sessions</p>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-trending-up h-3 w-3"
+                            aria-hidden="true"
+                        >
+                            <path d="M16 7h6v6"></path>
+                            <path d="m22 7-8.5 8.5-5-5L2 17"></path></svg
+                        >+18%
+                    </div>
+                </div>
+                <div class="mt-5 flex h-32 items-end gap-2">
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 64%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">6.4</span>
+                    </div>
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 71%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.1</span>
+                    </div>
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 70%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.0</span>
+                    </div>
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 79%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.9</span>
+                    </div>
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 82%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.2</span>
+                    </div>
+                    <div class="flex flex-1 flex-col items-center gap-1.5">
+                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                style="height: 86%"
+                            ></div>
+                        </div>
+                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.6</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface mt-5 rounded-2xl border border-hairline p-5 shadow-xs">
+                <h3 class="text-sm font-semibold tracking-tight">Practice mix</h3>
+                <div class="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-2">
+                    <div class="bg-brand" style="width: 47.8261%"></div>
+                    <div class="bg-foreground" style="width: 21.7391%"></div>
+                    <div class="bg-success" style="width: 17.3913%"></div>
+                    <div class="bg-warning" style="width: 13.0435%"></div>
+                </div>
+                <ul class="mt-4 space-y-2.5">
+                    <li class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-2"
+                            ><span class="h-1.5 w-1.5 rounded-full bg-brand"></span>Behavioral</span
+                            ><span class="text-muted-foreground tabular-nums">11</span>
+                    </li>
+                    <li class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-2"
+                            ><span class="h-1.5 w-1.5 rounded-full bg-foreground"></span>System design</span
+                            ><span class="text-muted-foreground tabular-nums">5</span>
+                    </li>
+                    <li class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-2"
+                            ><span class="h-1.5 w-1.5 rounded-full bg-success"></span>Portfolio</span
+                            ><span class="text-muted-foreground tabular-nums">4</span>
+                    </li>
+                    <li class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-2"
+                            ><span class="h-1.5 w-1.5 rounded-full bg-warning"></span>Case study</span
+                            ><span class="text-muted-foreground tabular-nums">3</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mt-6">
+                <div class="mb-2 flex items-center justify-between px-1">
+                    <h3 class="text-sm font-semibold tracking-tight">Recent sessions</h3>
+                    <button class="text-[11px] font-medium text-muted-foreground hover:text-foreground">
+                        See all
                     </button>
                 </div>
+                <div
+                    class="surface divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline shadow-xs"
+                >
+                    <a
+                        href="/feedback"
+                        class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
+                    ><div
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-mic h-3.5 w-3.5"
+                            aria-hidden="true"
+                        >
+                            <path d="M12 19v3"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                        </svg>
+                    </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium">Senior Product Manager</p>
+                            <p class="text-[11px] text-muted-foreground">Behavioral · 24m · Today</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold tabular-nums">8.6</p>
+                            <p class="text-[10px] font-medium tabular-nums text-success">+0.4</p>
+                        </div>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
+                            aria-hidden="true"
+                        >
+                            <path d="M7 7h10v10"></path>
+                            <path d="M7 17 17 7"></path></svg></a
+                    ><a
+                    href="/feedback"
+                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
+                ><div
+                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-mic h-3.5 w-3.5"
+                        aria-hidden="true"
+                    >
+                        <path d="M12 19v3"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                    </svg>
+                </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium">Staff Engineer</p>
+                        <p class="text-[11px] text-muted-foreground">System design · 31m · Yesterday</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold tabular-nums">7.9</p>
+                        <p class="text-[10px] font-medium tabular-nums text-success">+0.7</p>
+                    </div>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                    >
+                        <path d="M7 7h10v10"></path>
+                        <path d="M7 17 17 7"></path></svg></a
+                ><a
+                    href="/feedback"
+                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
+                ><div
+                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-mic h-3.5 w-3.5"
+                        aria-hidden="true"
+                    >
+                        <path d="M12 19v3"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                    </svg>
+                </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium">Brand Designer</p>
+                        <p class="text-[11px] text-muted-foreground">Portfolio · 18m · Mar 18</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold tabular-nums">9.1</p>
+                        <p class="text-[10px] font-medium tabular-nums text-success">+0.2</p>
+                    </div>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                    >
+                        <path d="M7 7h10v10"></path>
+                        <path d="M7 17 17 7"></path></svg></a
+                ><a
+                    href="/feedback"
+                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
+                ><div
+                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-mic h-3.5 w-3.5"
+                        aria-hidden="true"
+                    >
+                        <path d="M12 19v3"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                    </svg>
+                </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium">Engineering Manager</p>
+                        <p class="text-[11px] text-muted-foreground">Leadership · 27m · Mar 16</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold tabular-nums">7.2</p>
+                        <p class="text-[10px] font-medium tabular-nums text-destructive">-0.3</p>
+                    </div>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                    >
+                        <path d="M7 7h10v10"></path>
+                        <path d="M7 17 17 7"></path></svg
+                    ></a>
+                </div>
+            </section>
+
+            <section class="surface mt-5 flex items-center gap-3 rounded-2xl border border-hairline p-4 shadow-xs">
+                <div
+                    class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-foreground text-background"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-sparkles h-4 w-4"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+                        ></path>
+                        <path d="M20 2v4"></path>
+                        <path d="M22 4h-4"></path>
+                        <circle cx="4" cy="20" r="2"></circle>
+                    </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium">Sharpen your storytelling</p>
+                    <p class="text-[11px] text-muted-foreground">5 prompts focused on impact-first answers</p>
+                </div>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-chevron-right h-4 w-4 text-muted-foreground"
+                    aria-hidden="true"
+                >
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
             </section>
         </main>
-    </div>
+
+        <TextLink aria-label="Start new session" :href="route('user.interview.index')" class="fixed bottom-[calc(env(safe-area-inset-bottom,0)+5.5rem)] right-[max(1.25rem,env(safe-area-inset-right,0px))] z-30 grid h-14 w-14 place-items-center rounded-full bg-foreground text-background shadow-[0_10px_30px_-8px_oklch(0.20_0.02_265/0.45)] transition active:scale-95 md:bottom-10 md:right-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-6 w-6" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+            </svg>
+        </TextLink>
+    </AppLayout>
 </template>

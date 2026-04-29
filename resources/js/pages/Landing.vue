@@ -4,8 +4,8 @@
     import { ArrowRight, Check, Mic, BarChart3, Sparkles, Target, Clock, Shield, Star, ChevronDown, Play } from 'lucide-vue-next';
     import { computed, ref } from 'vue';
 
-    import SiteFooter from '@/components/layouts/SiteFooter.vue';
-    import SiteHeader from '@/components/layouts/SiteHeader.vue';
+    import SiteFooter from '@/layouts/SiteFooter.vue';
+    import SiteHeader from '@/layouts/SiteHeader.vue';
     import Orb from '@/components/Orb.vue';
     import ProductMockSession from '@/components/ProductMockSession.vue';
     import { useRoute } from '@/composables/useRoute';
@@ -162,7 +162,7 @@
                         </div>
                     </div>
 
-                    <div class="flex min-h-[260px] w-full items-center justify-center md:col-span-5 md:min-h-[420px]">
+                    <div class="flex min-h-65 w-full items-center justify-center md:col-span-5 md:min-h-105">
                         <div class="relative shrink-0">
                             <div
                                 class="pointer-events-none absolute inset-[-12%] rounded-full bg-brand/15 blur-3xl md:inset-[-18%]"
@@ -442,11 +442,7 @@
                             ]"
                         />
                     </button>
-                    <p
-                        v-if="f.open.value"
-                        v-fade-up
-                        class="pb-5 pr-10 text-sm leading-relaxed text-muted-foreground"
-                    >
+                    <p v-if="f.open.value" v-fade-up class="pb-5 pr-10 text-sm leading-relaxed text-muted-foreground">
                         {{ f.a }}
                     </p>
                 </div>

@@ -9,6 +9,7 @@
 use App\Http\Controllers\User\DashboardController;
 use App\Http\Controllers\User\InterviewController;
 use App\Http\Controllers\User\OnboardingController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\SessionFeedbackController;
 use App\Http\Middleware\EnsureCandidateOnboarded;
 
@@ -29,6 +30,15 @@ Route::prefix('user')
         // Dashboard
         Route::middleware([EnsureCandidateOnboarded::class])->group(function () {
             Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+            // Profile & Settings
+            Route::prefix('profile')
+                ->name('profile.')
+                ->controller(ProfileController::class)
+                ->group(function () {
+                    Route::get('/settings', 'settings')->name('settings');
+                    Route::post('/settings', 'update')->name('update');
+                });
 
             // Session Feedback
             Route::prefix('feedback')

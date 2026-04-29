@@ -6,8 +6,12 @@ namespace App\Providers;
 
 use App\Contracts\Auth\PostLoginRedirectContract;
 use App\Contracts\User\CandidateResumeStorageContract;
+use App\Contracts\User\ProfilePhotoStorageContract;
+use App\Contracts\User\UserProfileRepositoryContract;
+use App\Repositories\User\EloquentUserProfileRepository;
 use App\Services\Auth\PostLoginRedirectService;
 use App\Services\User\CandidateResumeStorageService;
+use App\Services\User\ProfilePhotoStorageService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +27,8 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PostLoginRedirectContract::class, PostLoginRedirectService::class);
         $this->app->bind(CandidateResumeStorageContract::class, CandidateResumeStorageService::class);
+        $this->app->bind(ProfilePhotoStorageContract::class, ProfilePhotoStorageService::class);
+        $this->app->bind(UserProfileRepositoryContract::class, EloquentUserProfileRepository::class);
     }
 
     /**

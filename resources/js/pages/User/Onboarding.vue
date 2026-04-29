@@ -1,11 +1,16 @@
 <script setup lang="ts">
     import {Head, useForm} from '@inertiajs/vue3';
     import ActionButton from '@/components/ActionButton.vue';
+import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import FormInput from '@/components/FormInput.vue';
-    import SiteHeader from '@/components/layouts/SiteHeader.vue';
     import {useRoute} from '@/composables/useRoute';
 
     const route = useRoute();
+const interviewTypeOptions = [
+    { value: 'behavioral', label: 'Behavioral' },
+    { value: 'technical', label: 'Technical' },
+    { value: 'role_specific', label: 'Role-specific' },
+] as const;
 
     const props = defineProps<{
         prefill: {
@@ -38,10 +43,8 @@
 <template>
     <Head title="Onboarding — Lumen" />
 
-    <div class="min-h-screen bg-surface-2/40">
-        <SiteHeader />
-
-        <main class="mx-auto max-w-3xl px-6 py-10 md:py-14">
+    <div class="onboarding">
+        <main class="onboarding-main">
             <div class="surface rounded-2xl p-6 shadow-xs md:p-8">
                 <p class="text-xs font-medium uppercase tracking-wider text-brand">Welcome</p>
                 <h1 class="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Let’s tailor your practice sessions</h1>
@@ -62,17 +65,14 @@
 
                     <div>
                         <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Interview focus</label>
-                        <select
+                        <CustomSelectDropdown
+                            id="interview_type"
                             v-model="form.interview_type"
-                            class="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                            :options="interviewTypeOptions"
+                            :error="form.errors.interview_type"
                         >
-                            <option value="behavioral">Behavioral</option>
-                            <option value="technical">Technical</option>
-                            <option value="role_specific">Role-specific</option>
-                        </select>
-                        <p v-if="form.errors.interview_type" class="mt-2 text-xs text-destructive">
-                            {{ form.errors.interview_type }}
-                        </p>
+                            <template #default="{ selectedLabel }">{{ selectedLabel }}</template>
+                        </CustomSelectDropdown>
                     </div>
 
                     <div>
@@ -109,4 +109,20 @@
         </main>
     </div>
 </template>
+
+<style scoped>
+.onboarding {
+    padding: 1.75rem 0 2rem;
+}
+
+.onboarding-main {
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .onboarding {
+        padding: 2.5rem 0 2.5rem;
+    }
+}
+</style>
 

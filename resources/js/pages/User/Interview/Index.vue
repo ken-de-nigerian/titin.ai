@@ -5,6 +5,7 @@
     import { computed, ref, watch } from 'vue';
 
     import InterviewRoomContent from '@/components/InterviewRoomContent.vue';
+import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import { useInterviewSession } from '@/composables/useLiveKit';
     import { useRoute } from '@/composables/useRoute';
     import type { SessionEndPayload } from '@/types/sessionFeedback';
@@ -30,6 +31,11 @@
     );
     const showConnectModal = ref(true);
     const isSubmitting = ref(false);
+const interviewTypeOptions = [
+    { value: 'behavioral', label: 'Behavioral' },
+    { value: 'technical', label: 'Technical' },
+    { value: 'role_specific', label: 'Role-specific' },
+] as const;
 
     const sessionMeta = computed(() => ({
         job_role: jobRole.value.trim() || 'Interview practice',
@@ -113,7 +119,7 @@
 <template>
     <Head title="Session — Lumen" />
 
-    <div class="min-h-screen">
+    <div class="interview-shell">
         <!-- Connect Modal -->
         <div
             v-if="showConnectModal"
@@ -165,20 +171,13 @@
 
                     <div>
                         <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Interview focus</label>
-                        <select
+                        <CustomSelectDropdown
+                            id="interview_type"
                             v-model="interviewType"
-                            class="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                            :options="interviewTypeOptions"
                         >
-                            <option value="behavioral">
-                                Behavioral
-                            </option>
-                            <option value="technical">
-                                Technical
-                            </option>
-                            <option value="role_specific">
-                                Role-specific
-                            </option>
-                        </select>
+                            <template #default="{ selectedLabel }">{{ selectedLabel }}</template>
+                        </CustomSelectDropdown>
                     </div>
 
                     <div
@@ -225,3 +224,23 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+.interview-shell {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+</style>
+
+<style scoped>
+.interview-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+</style>
