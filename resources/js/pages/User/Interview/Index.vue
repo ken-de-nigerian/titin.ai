@@ -24,19 +24,23 @@ import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     const session = useInterviewSession();
     const userName = ref<string>((authUser.value?.name as string | undefined) ?? '');
     const jobRole = ref<string>((authUser.value?.job_role as string | undefined) ?? 'Software Engineer');
-    const interviewType = ref<'behavioral' | 'technical' | 'role_specific'>(
-        (['behavioral', 'technical', 'role_specific'].includes(authUser.value?.interview_type as any)
-            ? (authUser.value?.interview_type as any)
-            : 'behavioral'),
+    const interviewSettings = computed(() => ((page.props as any).settings?.interview ?? {}) as {
+        default_type?: string;
+        types?: Record<string, string>;
+    });
+    const interviewTypeOptions = computed(() =>
+        Object.entries(interviewSettings.value.types ?? {}).map(([value, label]) => ({ value, label })),
+    );
+    const fallbackInterviewType = computed(
+        () => interviewSettings.value.default_type ?? interviewTypeOptions.value[0]?.value ?? 'mixed',
+    );
+    const interviewType = ref<string>(
+        interviewTypeOptions.value.some((option) => option.value === authUser.value?.interview_type)
+            ? String(authUser.value?.interview_type)
+            : fallbackInterviewType.value,
     );
     const showConnectModal = ref(true);
     const isSubmitting = ref(false);
-const interviewTypeOptions = [
-    { value: 'behavioral', label: 'Behavioral' },
-    { value: 'technical', label: 'Technical' },
-    { value: 'role_specific', label: 'Role-specific' },
-] as const;
-
     const sessionMeta = computed(() => ({
         job_role: jobRole.value.trim() || 'Interview practice',
         interview_type: interviewType.value,
@@ -56,6 +60,7 @@ const interviewTypeOptions = [
             await session.connect(trimmed, {
                 job_role: jobRole.value,
                 interview_type: interviewType.value,
+                concise_feedback: Boolean(authUser.value?.prefers_concise_feedback),
             });
             showConnectModal.value = false;
         } catch (e) {

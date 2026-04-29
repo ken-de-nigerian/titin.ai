@@ -8,26 +8,18 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-final class UpdateProfileRequest extends FormRequest
+final class UpdateProfileDetailsRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return $this->user() !== null;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        $interviewTypes = array_keys((array) config('settings.interview.types', []));
-        $allowedInterviewTypes = implode(',', $interviewTypes !== [] ? $interviewTypes : [(string) config('settings.interview.default_type', 'mixed')]);
-
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -36,9 +28,6 @@ final class UpdateProfileRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($this->user()?->id),
             ],
-            'job_role' => ['nullable', 'string', 'max:200'],
-            'interview_type' => ['required', 'string', "in:{$allowedInterviewTypes}", 'max:64'],
-            'prefers_concise_feedback' => ['required', 'boolean'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
         ];
     }

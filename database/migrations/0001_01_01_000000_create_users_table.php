@@ -19,6 +19,13 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['admin', 'user'])->default('user');
             $table->enum('status', ['active', 'suspended'])->default('active');
+            $table->string('job_role')->nullable();
+            $table->string('interview_type')->nullable();
+            $table->string('seniority_level', 64)->nullable();
+            $table->string('resume_path')->nullable();
+            $table->timestamp('onboarding_completed_at')->nullable();
+            $table->string('profile_photo_path')->nullable();
+            $table->boolean('prefers_concise_feedback')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

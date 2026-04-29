@@ -37,7 +37,10 @@ Route::prefix('user')
                 ->controller(ProfileController::class)
                 ->group(function () {
                     Route::get('/settings', 'settings')->name('settings');
-                    Route::post('/settings', 'update')->name('update');
+                    Route::post('/settings/details', 'updateProfileDetails')->name('details.update');
+                    Route::post('/settings/interview-preferences', 'updateInterviewPreferences')->name('interview-preferences.update');
+                    Route::post('/settings/password', 'updatePassword')->name('password.update');
+                    Route::delete('/settings', 'destroy')->name('destroy');
                 });
 
             // Session Feedback

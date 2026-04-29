@@ -4,7 +4,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { MotionPlugin } from 'motion-v';
 import type { DefineComponent } from 'vue';
-import { createApp, h } from 'vue';
+import { createApp, createSSRApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
 import type { ZiggyConfig } from '@/types/ziggy';
 
@@ -14,7 +14,8 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        const app = createApp({ render: () => h(App, props) })
+        const appFactory = import.meta.env.SSR ? createSSRApp : createApp;
+        const app = appFactory({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
             .use(MotionPlugin, {
@@ -39,7 +40,11 @@ createInertiaApp({
 
         app.config.globalProperties.$ziggy = props.initialPage.props.ziggy as ZiggyConfig;
 
-        app.mount(el);
+        if (!import.meta.env.SSR) {
+            app.mount(el);
+        }
+
+        return app;
     },
     progress: {
         color: '#1b1b18',

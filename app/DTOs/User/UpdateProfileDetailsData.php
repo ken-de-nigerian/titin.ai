@@ -6,7 +6,7 @@ namespace App\DTOs\User;
 
 use Illuminate\Http\UploadedFile;
 
-final readonly class UpdateProfileData
+final readonly class UpdateProfileDetailsData
 {
     public function __construct(
         public string $name,

@@ -31,7 +31,7 @@ final class SessionFeedbackController extends Controller
 
         $messages = $data['messages'] ?? [];
         $jobRole = $data['job_role'] ?? 'Interview candidate';
-        $interviewType = $data['interview_type'] ?? 'behavioral';
+        $interviewType = $data['interview_type'] ?? (string) config('settings.interview.default_type', 'mixed');
         $durationSeconds = (int) ($data['duration_seconds'] ?? 0);
         $questionCount = (int) ($data['question_count'] ?? 6);
 

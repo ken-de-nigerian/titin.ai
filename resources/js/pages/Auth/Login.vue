@@ -1,13 +1,17 @@
 <script setup lang="ts">
-    import { Head, useForm } from '@inertiajs/vue3';
+    import {Head, useForm, usePage} from '@inertiajs/vue3';
     import ActionButton from '@/components/ActionButton.vue';
     import FormInput from '@/components/FormInput.vue';
     import AuthLayout from '@/layouts/AuthLayout.vue';
     import AuthSidebar from '@/layouts/AuthSidebar.vue';
     import TextLink from '@/components/TextLink.vue';
     import { useRoute } from '@/composables/useRoute';
+    import SiteLogo from "@/components/SiteLogo.vue";
+    import {computed} from "vue";
 
+    const page = usePage();
     const route = useRoute();
+    const siteName = computed(() => page.props.name);
 
     const form = useForm({
         email: '',
@@ -38,8 +42,12 @@
         <template #form>
             <div class="relative flex flex-col px-6 py-10 md:px-16 md:py-14">
                 <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">
-                    <h1 class="text-3xl font-semibold tracking-tight">Welcome back</h1>
-                    <p class="mt-2 text-sm text-muted-foreground">Sign in to continue your practice.</p>
+                    <div class="mb-6 flex md:hidden">
+                        <SiteLogo />
+                    </div>
+
+                    <h1 class="text-3xl font-semibold tracking-tight">Good to see you again</h1>
+                    <p class="mt-2 text-sm text-muted-foreground">Sign in to continue building confidence for your next interview.</p>
 
                     <button class="mt-8 flex w-full items-center justify-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2.5 text-sm font-medium shadow-xs transition hover:bg-surface-2" type="button">
                         <svg viewBox="0 0 24 24" class="h-4 w-4">
@@ -98,7 +106,7 @@
                     </form>
 
                     <p class="mt-8 text-center text-sm text-muted-foreground">
-                        New to Lumen?
+                        New to {{ siteName }}?
                         <TextLink :href="route('register')" class="font-medium text-brand hover:underline">
                             Create account
                         </TextLink>

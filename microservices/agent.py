@@ -59,6 +59,16 @@ async def entrypoint(ctx: JobContext):
                 interview_config["interview_type"] = extra.get(
                     "interview_type", interview_config["interview_type"]
                 )
+                concise_feedback = extra.get("concise_feedback")
+                if isinstance(concise_feedback, bool):
+                    interview_config["concise_feedback"] = concise_feedback
+                elif isinstance(concise_feedback, str):
+                    interview_config["concise_feedback"] = concise_feedback.strip().lower() in {
+                        "1",
+                        "true",
+                        "yes",
+                        "on",
+                    }
                 cn = extra.get("candidate_name")
                 if isinstance(cn, str) and cn.strip():
                     interview_config["candidate_name"] = cn.strip()

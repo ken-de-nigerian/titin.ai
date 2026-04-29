@@ -28,7 +28,8 @@ final class OnboardingController extends Controller
             'prefill' => [
                 'name' => $user?->name ?? '',
                 'job_role' => $user?->job_role ?? '',
-                'interview_type' => $user?->interview_type ?? 'behavioral',
+                'interview_type' => $user?->interview_type ?? (string) config('settings.interview.default_type', 'mixed'),
+                'seniority_level' => $user?->seniority_level ?? (string) config('settings.seniority.default_level', 'mid_level'),
             ],
         ]);
     }
@@ -49,4 +50,3 @@ final class OnboardingController extends Controller
             ->toRoute('user.dashboard');
     }
 }
-

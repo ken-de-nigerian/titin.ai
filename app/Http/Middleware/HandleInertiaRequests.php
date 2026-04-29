@@ -56,6 +56,8 @@ class HandleInertiaRequests extends Middleware
                     'email_verified' => (bool) $request->user()->hasVerifiedEmail(),
                     'job_role' => $request->user()->job_role,
                     'interview_type' => $request->user()->interview_type,
+                    'seniority_level' => $request->user()->seniority_level,
+                    'prefers_concise_feedback' => (bool) $request->user()->prefers_concise_feedback,
                     'profile_photo_url' => $request->user()->profile_photo_path
                         ? Storage::disk('public')->url($request->user()->profile_photo_path)
                         : null,
@@ -65,6 +67,16 @@ class HandleInertiaRequests extends Middleware
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
+            ],
+            'settings' => [
+                'interview' => [
+                    'default_type' => (string) config('settings.interview.default_type', 'mixed'),
+                    'types' => config('settings.interview.types', []),
+                ],
+                'seniority' => [
+                    'default_level' => (string) config('settings.seniority.default_level', 'mid_level'),
+                    'levels' => config('settings.seniority.levels', []),
+                ],
             ],
         ];
     }

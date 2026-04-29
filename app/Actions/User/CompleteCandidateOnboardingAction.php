@@ -13,12 +13,14 @@ final class CompleteCandidateOnboardingAction
         User $user,
         string $jobRole,
         string $interviewType,
+        string $seniorityLevel,
         ?string $resumePath,
         Carbon $completedAt,
     ): User {
         $user->forceFill([
             'job_role' => $jobRole,
             'interview_type' => $interviewType,
+            'seniority_level' => $seniorityLevel,
             'resume_path' => $resumePath,
             'onboarding_completed_at' => $completedAt,
         ]);
@@ -28,4 +30,3 @@ final class CompleteCandidateOnboardingAction
         return $user;
     }
 }
-

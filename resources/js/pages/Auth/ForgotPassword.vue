@@ -6,6 +6,7 @@
     import AuthSidebar from '@/layouts/AuthSidebar.vue';
     import TextLink from '@/components/TextLink.vue';
     import { useRoute } from '@/composables/useRoute';
+    import SiteLogo from "@/components/SiteLogo.vue";
 
     const route = useRoute();
 
@@ -14,18 +15,15 @@
     });
 
     const submit = (): void => {
-        // Keep the same submission format as other auth pages.
-        // Only submit if backend routes exist in Ziggy.
-        if (!route().has('password.email')) {
-
-            console.warn('Missing route password.email; wire Laravel password reset routes to enable this form.');
-
-            return;
-        }
-
         form.post(route('password.email'), {
             preserveScroll: true,
         });
+    };
+
+    const clearError = (field: keyof typeof form.errors): void => {
+        if (form.errors[field]) {
+            form.clearErrors(field);
+        }
     };
 </script>
 
@@ -36,6 +34,10 @@
         <template #form>
             <div class="relative flex flex-col px-6 py-10 md:px-16 md:py-14">
                 <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">
+                    <div class="mb-6 flex md:hidden">
+                        <SiteLogo />
+                    </div>
+
                     <h1 class="text-3xl font-semibold tracking-tight">Reset your password</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
                         Enter your email and we'll send you a link to reset your password.
@@ -50,6 +52,7 @@
                             placeholder="you@company.com"
                             autocomplete="email"
                             :error="form.errors.email"
+                            @focus="clearError('email')"
                         />
 
                         <ActionButton :processing="form.processing">Send reset link</ActionButton>

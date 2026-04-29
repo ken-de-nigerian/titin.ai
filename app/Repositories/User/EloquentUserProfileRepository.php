@@ -9,7 +9,7 @@ use App\Models\User;
 
 final class EloquentUserProfileRepository implements UserProfileRepositoryContract
 {
-    public function updateProfile(
+    public function updateProfileDetails(
         User $user,
         string $name,
         string $email,
@@ -29,5 +29,38 @@ final class EloquentUserProfileRepository implements UserProfileRepositoryContra
         $user->forceFill($attributes)->save();
 
         return $user->refresh();
+    }
+
+    public function updateInterviewPreferences(
+        User $user,
+        ?string $jobRole,
+        string $interviewType,
+        string $seniorityLevel,
+        bool $prefersConciseFeedback,
+    ): User {
+        $user->forceFill([
+            'job_role' => $jobRole,
+            'interview_type' => $interviewType,
+            'seniority_level' => $seniorityLevel,
+            'prefers_concise_feedback' => $prefersConciseFeedback,
+        ])->save();
+
+        return $user->refresh();
+    }
+
+    public function updatePassword(
+        User $user,
+        string $password,
+    ): User {
+        $user->forceFill([
+            'password' => $password,
+        ])->save();
+
+        return $user->refresh();
+    }
+
+    public function deleteAccount(User $user): void
+    {
+        $user->delete();
     }
 }

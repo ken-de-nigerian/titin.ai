@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Auth\RegisterUserAction;
 use App\Actions\Auth\SendEmailVerificationNotificationAction;
+use App\Actions\Auth\SendWelcomeNotificationAction;
 use App\DTOs\Auth\RegisterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartRegistrationRequest;
@@ -19,6 +20,7 @@ final class RegisterController extends Controller
     public function __construct(
         private readonly RegisterUserAction $registerUser,
         private readonly SendEmailVerificationNotificationAction $sendEmailVerificationNotification,
+        private readonly SendWelcomeNotificationAction $sendWelcomeNotification,
     ) {}
 
     public function index(): Response
@@ -40,6 +42,7 @@ final class RegisterController extends Controller
         $request->session()->regenerate();
 
         $this->sendEmailVerificationNotification->execute($user);
+        $this->sendWelcomeNotification->execute($user);
 
         return redirect()->route('verification.notice');
     }

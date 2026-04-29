@@ -2,6 +2,8 @@
 
 use App\Contracts\Auth\PostLoginRedirectContract;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SessionController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -24,6 +26,17 @@ Route::middleware('guest')->group(function () {
     Route::controller(RegisterController::class)->group(function () {
         Route::get('/register', 'index')->name('register');
         Route::post('/register', 'register')->name('register.store');
+    });
+
+    // Password Reset Routes
+    Route::controller(PasswordResetLinkController::class)->group(function () {
+        Route::get('/forgot-password', 'create')->name('password.request');
+        Route::post('/forgot-password', 'store')->name('password.email');
+    });
+
+    Route::controller(NewPasswordController::class)->group(function () {
+        Route::get('/reset-password/{token}', 'create')->name('password.reset');
+        Route::post('/reset-password', 'store')->name('password.store');
     });
 });
 

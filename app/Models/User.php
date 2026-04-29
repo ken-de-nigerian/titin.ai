@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Notifications\QueuedResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -20,8 +21,22 @@ use Illuminate\Notifications\Notifiable;
  * @property mixed $id
  * @property mixed $profile_photo_path
  * @property mixed $email
+ * @property mixed $resume_path
  */
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'job_role', 'interview_type', 'resume_path', 'profile_photo_path', 'onboarding_completed_at'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+    'role',
+    'status',
+    'job_role',
+    'interview_type',
+    'seniority_level',
+    'prefers_concise_feedback',
+    'resume_path',
+    'profile_photo_path',
+    'onboarding_completed_at',
+])]
 #[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable implements MustVerifyEmail
 {
@@ -40,7 +55,13 @@ final class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'role' => UserRole::class,
             'status' => UserStatus::class,
+            'prefers_concise_feedback' => 'boolean',
             'onboarding_completed_at' => 'datetime',
         ];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetPasswordNotification($token));
     }
 }

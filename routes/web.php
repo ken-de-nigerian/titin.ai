@@ -17,6 +17,7 @@ Route::get('/api/getToken', function (Request $request) {
             'name' => $name,
             'job_role' => $request->query('job_role'),
             'interview_type' => $request->query('interview_type'),
+            'concise_feedback' => $request->query('concise_feedback'),
         ], fn (?string $v): bool => $v !== null && $v !== '');
 
         $response = Http::timeout(10)->get("$tokenServerUrl/getToken", $query);

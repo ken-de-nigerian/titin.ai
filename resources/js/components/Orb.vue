@@ -58,8 +58,8 @@
     const rippleDuration = 6.8;
 
     const rippleAnimate = {
-        scale: [1, 1.1, 1.38, 1.56],
-        opacity: [0, 0.34, 0.14, 0],
+        scale: [1, 1.16, 1.52, 1.78],
+        opacity: [0, 0.5, 0.24, 0],
     };
 
     const rippleTransition = (index: number) => ({
@@ -71,7 +71,7 @@
         delay: index * (rippleDuration / rippleIndices.length),
     });
 
-    const borderOuter = computed(() => `oklch(0.55 0.20 268 / ${0.08 + cfg.value.ringOpacity * 0.06})`);
+    const borderOuter = computed(() => `oklch(0.24 0.01 265 / ${0.08 + cfg.value.ringOpacity * 0.06})`);
     const borderInner = computed(() => `oklch(0.20 0.02 265 / ${0.05 + cfg.value.ringOpacity * 0.05})`);
 
     const boxStyle = computed(() =>
@@ -82,9 +82,9 @@
         width: '70%',
         height: '70%',
         background:
-            'radial-gradient(circle at 32% 26%, oklch(0.72 0.10 268) 0%, oklch(0.42 0.14 268) 48%, oklch(0.22 0.08 268) 100%)',
+            'radial-gradient(circle at 32% 26%, oklch(0.42 0.01 265) 0%, oklch(0.26 0.01 265) 48%, oklch(0.14 0.01 265) 100%)',
         boxShadow:
-            'inset 0 -32px 60px oklch(0.10 0.05 268 / 0.55), inset 0 22px 40px oklch(1 0 0 / 0.18), 0 18px 40px -10px oklch(0.42 0.14 268 / 0.35)',
+            'inset 0 -32px 60px oklch(0.08 0.01 265 / 0.55), inset 0 22px 40px oklch(1 0 0 / 0.18), 0 18px 40px -10px oklch(0.16 0.01 265 / 0.35)',
     }));
 
     const coreAnimate = computed(() => ({
@@ -105,10 +105,10 @@
             <Motion
                 v-for="idx in rippleIndices"
                 :key="idx"
-                class="absolute rounded-full border-2 border-brand/30 shadow-[0_0_24px_oklch(0.55_0.16_268/0.18)]"
+                class="absolute rounded-full border-2 border-foreground/35 shadow-[0_0_32px_oklch(0.2_0.01_265/0.35)]"
                 :animate="rippleAnimate"
                 :transition="rippleTransition(idx)"
-                :style="{ inset: '4%', transformOrigin: 'center center', willChange: 'transform, opacity' }"
+                :style="{ inset: '2%', transformOrigin: 'center center', willChange: 'transform, opacity' }"
             />
         </div>
 
@@ -116,7 +116,7 @@
             class="absolute z-1 rounded-full"
             :style="{
                 inset: '-6%',
-                background: 'radial-gradient(circle, oklch(0.55 0.20 268 / 0.10), transparent 65%)',
+                background: 'radial-gradient(circle, oklch(0.18 0.01 265 / 0.20), transparent 65%)',
                 filter: 'blur(28px)',
                 opacity: cfg.ringOpacity,
             }"

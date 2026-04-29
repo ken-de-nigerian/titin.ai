@@ -41,7 +41,7 @@ export { useLiveKitRoom, useLocalParticipant, useMultibandTrackVolume, useVoiceA
  */
 export async function fetchLiveKitToken(
     name: string,
-    opts?: { job_role?: string; interview_type?: string },
+    opts?: { job_role?: string; interview_type?: string; concise_feedback?: boolean },
 ): Promise<string> {
     const params = new URLSearchParams({ name });
 
@@ -51,6 +51,10 @@ export async function fetchLiveKitToken(
 
     if (opts?.interview_type?.trim()) {
         params.set('interview_type', opts.interview_type.trim());
+    }
+
+    if (typeof opts?.concise_feedback === 'boolean') {
+        params.set('concise_feedback', opts.concise_feedback ? '1' : '0');
     }
 
     const res = await fetch(`/api/getToken?${params.toString()}`);
@@ -75,7 +79,7 @@ export function useInterviewSession() {
 
     async function connect(
         name: string,
-        opts?: { job_role?: string; interview_type?: string },
+        opts?: { job_role?: string; interview_type?: string; concise_feedback?: boolean },
     ): Promise<void> {
         isConnecting.value = true;
         connectError.value = null;

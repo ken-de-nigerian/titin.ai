@@ -18,6 +18,7 @@ INTERVIEW_TYPE_CONTEXT = {
 DEFAULT_INTERVIEW_CONFIG = {
     "job_role": "Software Engineer",
     "interview_type": "behavioral",
+    "concise_feedback": False,
     "question_count": 6,
 }
 
@@ -28,6 +29,7 @@ def build_system_prompt(config: dict) -> str:
     )
     job_role = config.get("job_role", DEFAULT_INTERVIEW_CONFIG["job_role"])
     interview_type = config.get("interview_type", DEFAULT_INTERVIEW_CONFIG["interview_type"])
+    concise_feedback = bool(config.get("concise_feedback", DEFAULT_INTERVIEW_CONFIG["concise_feedback"]))
     question_count = config.get("question_count", DEFAULT_INTERVIEW_CONFIG["question_count"])
     candidate_name = str(config.get("candidate_name", "") or "").strip()
     greeting_hint = ""
@@ -38,6 +40,17 @@ def build_system_prompt(config: dict) -> str:
             f"their first name ({first}) if it sounds natural — do not read a placeholder or "
             f"variable name aloud. Never say things like YOUR_NAME, your_name, or {{name}}.\n"
         )
+
+    feedback_style_block = (
+        "FEEDBACK STYLE:\n"
+        "- After each candidate answer, give concise feedback in one short sentence.\n"
+        "- Mention one clear strength and one specific improvement.\n"
+        "- Keep coaching brief and move quickly to the next question.\n"
+    ) if concise_feedback else (
+        "FEEDBACK STYLE:\n"
+        "- Keep acknowledgments brief by default.\n"
+        "- Give deeper coaching only when the candidate asks for detail or when an answer needs correction.\n"
+    )
 
     return f"""You are a professional job interviewer conducting a paid mock interview session.
 
@@ -57,6 +70,7 @@ SESSION QUALITY (users pay per session — be worth it):
 - Track how many main questions you have covered; pace toward **{question_count}** without rushing them.
 - **Never repeat** the same main question twice in one session.
 - After you have covered enough ground for this session, close with a **brief warm closing** (one or two sentences).
+{feedback_style_block}
 
 TONE: Professional, neutral, respectful — neither harsh nor overly chatty.
 """

@@ -6,6 +6,7 @@
     import AuthSidebar from "@/layouts/AuthSidebar.vue";
     import TextLink from "@/components/TextLink.vue";
     import { useRoute } from '@/composables/useRoute';
+    import SiteLogo from "@/components/SiteLogo.vue";
 
     const route = useRoute();
 
@@ -39,9 +40,13 @@
         <template #form>
             <div class="relative flex flex-col px-6 py-10 md:px-16 md:py-14">
                 <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">
-                    <h1 class="text-3xl font-semibold tracking-tight">Create your account</h1>
+                    <div class="mb-6 flex md:hidden">
+                        <SiteLogo />
+                    </div>
+
+                    <h1 class="text-3xl font-semibold tracking-tight">First things first</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Two minutes to your first session — no card required.
+                        Set up your account and start improving your interview skills in minutes.
                     </p>
 
                     <button class="mt-8 flex w-full items-center justify-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2.5 text-sm font-medium shadow-xs transition hover:bg-surface-2" type="button">

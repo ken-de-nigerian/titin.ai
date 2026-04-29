@@ -25,9 +25,9 @@ final readonly class CandidateOnboardingService
             user: $user,
             jobRole: $data->jobRole,
             interviewType: $data->interviewType,
+            seniorityLevel: $data->seniorityLevel,
             resumePath: $resumePath,
             completedAt: $now,
         );
     }
 }
-
