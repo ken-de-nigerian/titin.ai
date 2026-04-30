@@ -36,7 +36,7 @@
 </script>
 
 <template>
-    <Head title="Reset password — Lumen" />
+    <Head title="Create a New Password" />
 
     <AuthLayout>
         <template #form>
@@ -46,9 +46,9 @@
                         <SiteLogo />
                     </div>
 
-                    <h1 class="text-3xl font-semibold tracking-tight">Set new password</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight">Create a new password</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Enter a new password for <strong>{{ email }}</strong>
+                        You’re resetting the password for <strong>{{ email }}</strong>. Choose a new one below.
                     </p>
 
                     <form class="mt-8 space-y-4" method="POST" @submit.prevent="submit">

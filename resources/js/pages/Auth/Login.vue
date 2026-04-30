@@ -36,7 +36,7 @@
 </script>
 
 <template>
-    <Head title="Login To Your Account" />
+    <Head title="Sign In" />
 
     <AuthLayout>
         <template #form>

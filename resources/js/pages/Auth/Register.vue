@@ -34,7 +34,7 @@
 </script>
 
 <template>
-    <Head title="Let's Get Started" />
+    <Head title="Create Account" />
 
     <AuthLayout>
         <template #form>
@@ -46,7 +46,7 @@
 
                     <h1 class="text-3xl font-semibold tracking-tight">First things first</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Set up your account and start improving your interview skills in minutes.
+                        Let’s set up your account so you can start practicing your interviews.
                     </p>
 
                     <button class="mt-8 flex w-full items-center justify-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2.5 text-sm font-medium shadow-xs transition hover:bg-surface-2" type="button">

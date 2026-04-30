@@ -42,7 +42,7 @@
 </script>
 
 <template>
-    <Head title="Verify your email" />
+    <Head title="Verify Your Email" />
 
     <AuthLayout>
         <template #form>
@@ -54,7 +54,7 @@
 
                     <h1 class="text-3xl font-semibold tracking-tight">Check your inbox</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Before you can access your dashboard, please verify your email address by clicking the link we just emailed you.
+                        We’ve sent you a link to verify your email and get started with your interview practice.
                     </p>
 
                     <div class="mt-8 rounded-xl border border-hairline bg-surface p-5 shadow-xs">

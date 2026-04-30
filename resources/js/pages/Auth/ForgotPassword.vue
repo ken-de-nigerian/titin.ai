@@ -28,7 +28,7 @@
 </script>
 
 <template>
-    <Head title="Reset password — Lumen" />
+    <Head title="Reset Your Password" />
 
     <AuthLayout>
         <template #form>
@@ -38,7 +38,7 @@
                         <SiteLogo />
                     </div>
 
-                    <h1 class="text-3xl font-semibold tracking-tight">Reset your password</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight">Forgot your password?</h1>
                     <p class="mt-2 text-sm text-muted-foreground">
                         Enter your email and we'll send you a link to reset your password.
                     </p>

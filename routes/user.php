@@ -6,6 +6,7 @@
 |--------------------------------------------------------------------------
 */
 
+use App\Http\Controllers\User\CvAndResumeController;
 use App\Http\Controllers\User\DashboardController;
 use App\Http\Controllers\User\InterviewController;
 use App\Http\Controllers\User\OnboardingController;
@@ -41,6 +42,14 @@ Route::prefix('user')
                     Route::post('/settings/interview-preferences', 'updateInterviewPreferences')->name('interview-preferences.update');
                     Route::post('/settings/password', 'updatePassword')->name('password.update');
                     Route::delete('/settings', 'destroy')->name('destroy');
+                });
+
+            // Cv & Resumes
+            Route::prefix('cv')
+                ->name('cv.')
+                ->controller(CvAndResumeController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
                 });
 
             // Session Feedback

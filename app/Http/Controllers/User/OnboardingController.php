@@ -46,7 +46,7 @@ final class OnboardingController extends Controller
         $this->onboarding->complete($user, $data, Carbon::now());
 
         return $this
-            ->notify('success', __('Profile saved.'), __('Success'))
+            ->notify('success', __('You’re all set — your profile is updated.'), __('Success'))
             ->toRoute('user.dashboard');
     }
 }

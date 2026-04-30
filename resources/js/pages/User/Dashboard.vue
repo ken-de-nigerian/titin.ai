@@ -61,7 +61,7 @@
                 </div>
             </section>
 
-            <section class="mt-5 grid grid-cols-2 gap-3">
+            <section class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-medium text-muted-foreground">Sessions</p>
@@ -166,123 +166,125 @@
                 </div>
             </section>
 
-            <section class="surface mt-5 rounded-2xl border border-hairline p-5 shadow-xs">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-sm font-semibold tracking-tight">Score trajectory</h3>
-                        <p class="text-[11px] text-muted-foreground">Last 6 sessions</p>
-                    </div>
+            <div class="mt-5 grid gap-5 md:grid-cols-2">
+                <section class="surface rounded-2xl border border-hairline p-5 shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold tracking-tight">Score trajectory</h3>
+                            <p class="text-[11px] text-muted-foreground">Last 6 sessions</p>
+                        </div>
 
-                    <div
-                        class="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="lucide lucide-trending-up h-3 w-3"
-                            aria-hidden="true"
+                        <div
+                            class="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
                         >
-                            <path d="M16 7h6v6"></path>
-                            <path d="m22 7-8.5 8.5-5-5L2 17"></path></svg
-                        >+18%
-                    </div>
-                </div>
-                <div class="mt-5 flex h-32 items-end gap-2">
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 64%"
-                            ></div>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="lucide lucide-trending-up h-3 w-3"
+                                aria-hidden="true"
+                            >
+                                <path d="M16 7h6v6"></path>
+                                <path d="m22 7-8.5 8.5-5-5L2 17"></path></svg
+                            >+18%
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">6.4</span>
                     </div>
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 71%"
-                            ></div>
+                    <div class="mt-5 flex h-32 items-end gap-2">
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 64%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">6.4</span>
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.1</span>
-                    </div>
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 70%"
-                            ></div>
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 71%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.1</span>
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.0</span>
-                    </div>
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 79%"
-                            ></div>
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 70%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.0</span>
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.9</span>
-                    </div>
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 82%"
-                            ></div>
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 79%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.9</span>
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.2</span>
-                    </div>
-                    <div class="flex flex-1 flex-col items-center gap-1.5">
-                        <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                            <div
-                                class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                style="height: 86%"
-                            ></div>
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 82%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.2</span>
                         </div>
-                        <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.6</span>
+                        <div class="flex flex-1 flex-col items-center gap-1.5">
+                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
+                                <div
+                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
+                                    style="height: 86%"
+                                ></div>
+                            </div>
+                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.6</span>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <section class="surface mt-5 rounded-2xl border border-hairline p-5 shadow-xs">
-                <h3 class="text-sm font-semibold tracking-tight">Practice mix</h3>
-                <div class="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-2">
-                    <div class="bg-brand" style="width: 47.8261%"></div>
-                    <div class="bg-foreground" style="width: 21.7391%"></div>
-                    <div class="bg-success" style="width: 17.3913%"></div>
-                    <div class="bg-warning" style="width: 13.0435%"></div>
-                </div>
-                <ul class="mt-4 space-y-2.5">
-                    <li class="flex items-center justify-between text-xs">
-                            <span class="flex items-center gap-2"
-                            ><span class="h-1.5 w-1.5 rounded-full bg-brand"></span>Behavioral</span
-                            ><span class="text-muted-foreground tabular-nums">11</span>
-                    </li>
-                    <li class="flex items-center justify-between text-xs">
-                            <span class="flex items-center gap-2"
-                            ><span class="h-1.5 w-1.5 rounded-full bg-foreground"></span>System design</span
-                            ><span class="text-muted-foreground tabular-nums">5</span>
-                    </li>
-                    <li class="flex items-center justify-between text-xs">
-                            <span class="flex items-center gap-2"
-                            ><span class="h-1.5 w-1.5 rounded-full bg-success"></span>Portfolio</span
-                            ><span class="text-muted-foreground tabular-nums">4</span>
-                    </li>
-                    <li class="flex items-center justify-between text-xs">
-                            <span class="flex items-center gap-2"
-                            ><span class="h-1.5 w-1.5 rounded-full bg-warning"></span>Case study</span
-                            ><span class="text-muted-foreground tabular-nums">3</span>
-                    </li>
-                </ul>
-            </section>
+                <section class="surface rounded-2xl border border-hairline p-5 shadow-xs">
+                    <h3 class="text-sm font-semibold tracking-tight">Practice mix</h3>
+                    <div class="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-2">
+                        <div class="bg-brand" style="width: 47.8261%"></div>
+                        <div class="bg-foreground" style="width: 21.7391%"></div>
+                        <div class="bg-success" style="width: 17.3913%"></div>
+                        <div class="bg-warning" style="width: 13.0435%"></div>
+                    </div>
+                    <ul class="mt-4 space-y-2.5">
+                        <li class="flex items-center justify-between text-xs">
+                                <span class="flex items-center gap-2"
+                                ><span class="h-1.5 w-1.5 rounded-full bg-brand"></span>Behavioral</span
+                                ><span class="text-muted-foreground tabular-nums">11</span>
+                        </li>
+                        <li class="flex items-center justify-between text-xs">
+                                <span class="flex items-center gap-2"
+                                ><span class="h-1.5 w-1.5 rounded-full bg-foreground"></span>System design</span
+                                ><span class="text-muted-foreground tabular-nums">5</span>
+                        </li>
+                        <li class="flex items-center justify-between text-xs">
+                                <span class="flex items-center gap-2"
+                                ><span class="h-1.5 w-1.5 rounded-full bg-success"></span>Portfolio</span
+                                ><span class="text-muted-foreground tabular-nums">4</span>
+                        </li>
+                        <li class="flex items-center justify-between text-xs">
+                                <span class="flex items-center gap-2"
+                                ><span class="h-1.5 w-1.5 rounded-full bg-warning"></span>Case study</span
+                                ><span class="text-muted-foreground tabular-nums">3</span>
+                        </li>
+                    </ul>
+                </section>
+            </div>
 
             <section class="mt-6">
                 <div class="mb-2 flex items-center justify-between px-1">

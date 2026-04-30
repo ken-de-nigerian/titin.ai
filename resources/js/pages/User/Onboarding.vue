@@ -141,7 +141,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
 </script>
 
 <template>
-    <Head title="Onboarding" />
+    <Head title="Getting Started" />
 
     <div class="min-h-screen bg-background">
         <header class="sticky top-0 z-40 border-b border-hairline bg-background/95 backdrop-blur">
@@ -165,10 +165,10 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
 
         <main class="container mx-auto max-w-3xl px-6 py-8">
             <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-brand">Welcome, {{ authUser?.name}}</p>
-                <h1 class="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Let’s tailor your practice sessions</h1>
+                <p class="text-xs font-medium uppercase tracking-wider text-brand">Welcome, {{ authUser?.name }}</p>
+                <h1 class="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Let’s tailor your practice</h1>
                 <p class="mt-2 text-sm text-muted-foreground">
-                    Tell us what you’re preparing for. You can update this later.
+                    Tell us what you’re preparing for, and we’ll shape your interview sessions around it. You can change this anytime.
                 </p>
 
                 <form class="mt-8 space-y-5" @submit.prevent="submit">
@@ -183,7 +183,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                         @focus="clearError('job_role')"
                     />
 
-                    <div class="mb-6 rounded-lg border border-hairline bg-surface text-foreground shadow-sm">
+                    <div class="mb-6 rounded-2xl border border-hairline bg-surface text-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold tracking-tight text-lg flex items-center gap-2">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -224,7 +224,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                         </div>
                     </div>
 
-                    <div class="mb-8 rounded-lg border border-hairline bg-surface text-foreground shadow-sm">
+                    <div class="mb-8 rounded-2xl border border-hairline bg-surface text-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold tracking-tight text-lg flex items-center gap-2">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -256,7 +256,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                     </div>
 
                     <div>
-                        <div class="overflow-hidden rounded-lg border border-hairline bg-surface text-foreground shadow-sm">
+                        <div class="overflow-hidden rounded-2xl border border-hairline bg-surface text-foreground shadow-sm">
                             <div class="flex flex-col space-y-1.5 p-6 pb-4">
                                 <h3 class="font-semibold tracking-tight flex items-center gap-2 text-lg">
                                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -287,7 +287,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
 
                                 <div v-else class="flex flex-col gap-3 rounded-xl border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="flex w-full min-w-0 items-center gap-3">
-                                        <div class="h-10 w-10 rounded-lg bg-accent flex items-center justify-center">
+                                        <div class="h-10 w-10 rounded-2xl bg-accent flex items-center justify-center">
                                             <svg v-if="isResumeAnalyzing" stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" viewBox="0 0 16 16" class="spinner animate-spin" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;">
                                                 <path d="M8 0c-4.355 0-7.898 3.481-7.998 7.812 0.092-3.779 2.966-6.812 6.498-6.812 3.59 0 6.5 3.134 6.5 7 0 0.828 0.672 1.5 1.5 1.5s1.5-0.672 1.5-1.5c0-4.418-3.582-8-8-8zM8 16c4.355 0 7.898-3.481 7.998-7.812-0.092 3.779-2.966 6.812-6.498 6.812-3.59 0-6.5-3.134-6.5-7 0-0.828-0.672-1.5-1.5-1.5s-1.5 0.672-1.5 1.5c0 4.418 3.582 8 8 8z"></path>
                                             </svg>
