@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
@@ -37,8 +38,17 @@ it('issues an interview token for authenticated onboarded users', function () {
     ]);
 
     Http::assertSent(function (Request $request): bool {
+        $payload = $request->data();
+        $promptContext = Arr::get($payload, 'prompt_context');
+
         return $request->url() === 'http://localhost:5001/internal/issue-token'
-            && $request->hasHeader('X-Internal-Token', 'test-secret');
+            && $request->hasHeader('X-Internal-Token', 'test-secret')
+            && is_array($promptContext)
+            && Arr::get($promptContext, 'schema_version') === 'prompt_context.v1'
+            && Arr::get($promptContext, 'interview.mode') === 'simulation'
+            && Arr::get($promptContext, 'interview.type') === 'technical'
+            && is_string(Arr::get($promptContext, 'interview.type_context', ''))
+            && Arr::get($promptContext, 'session.question_count') === 6;
     });
 });
 

@@ -72,4 +72,9 @@ final class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(UserCv::class);
     }
+
+    public function interviewSessions(): HasMany
+    {
+        return $this->hasMany(InterviewSession::class);
+    }
 }

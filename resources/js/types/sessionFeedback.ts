@@ -5,6 +5,7 @@ export interface InterviewSessionMeta {
 }
 
 export interface SessionEndPayload {
+    interview_session_id: number;
     messages: Array<{ speaker: 'user' | 'agent'; text: string; at: string }>;
     duration_seconds: number;
     sessionMeta: InterviewSessionMeta;

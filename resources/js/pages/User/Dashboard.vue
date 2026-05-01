@@ -1,25 +1,94 @@
 <script setup lang="ts">
-    import {Head, usePage} from "@inertiajs/vue3";
-    import {computed} from "vue";
-    import AppLayout from "@/layouts/AppLayout.vue";
-    import TextLink from "@/components/TextLink.vue";
-    import {useRoute} from "@/composables/useRoute";
+    import { Head, usePage } from '@inertiajs/vue3';
+    import { computed } from 'vue';
+    import TextLink from '@/components/TextLink.vue';
+    import NotFoundEmptyState from '@/components/ui/NotFoundEmptyState.vue';
+    import { useRoute } from '@/composables/useRoute';
+    import AppLayout from '@/layouts/AppLayout.vue';
 
-    const page = usePage()
+    const page = usePage();
     const route = useRoute();
+    const props = defineProps<{
+        sessionStats: {
+            total_sessions: number;
+            average_score: number | null;
+            total_duration_seconds: number;
+            last_score: number | null;
+        };
+        recentSessions: Array<{
+            id: number;
+            job_role: string;
+            interview_type: string;
+            duration_seconds: number;
+            overall_score: number | null;
+            ended_at: string | null;
+        }>;
+    }>();
 
-    const auth = computed(() => (page.props as any).auth)
+    const auth = computed(() => (page.props as any).auth);
 
     const greeting = computed(() => {
-        const hour = new Date().getHours()
-        if (hour < 12) return 'Good morning'
-        if (hour < 17) return 'Good afternoon'
-        return 'Good evening'
-    })
+        const hour = new Date().getHours();
+
+        if (hour < 12) {
+            return 'Good morning';
+        }
+
+        if (hour < 17) {
+            return 'Good afternoon';
+        }
+
+        return 'Good evening';
+    });
 
     const firstName = computed(() => {
-        return auth.value?.user?.name?.split(' ')[0] || 'there'
-    })
+        return auth.value?.user?.name?.split(' ')[0] || 'there';
+    });
+
+    const totalPracticeTime = computed(() => {
+        const totalSeconds = props.sessionStats.total_duration_seconds;
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+        return `${hours}h ${minutes}m`;
+    });
+
+    const recentSummary = computed(() => {
+        if (props.sessionStats.last_score === null) {
+            return 'Start your first interview session to build your performance timeline.';
+        }
+
+        return `Your latest completed session scored ${props.sessionStats.last_score.toFixed(1)}. Keep going.`;
+    });
+
+    const latestSession = computed(() => props.recentSessions[0] ?? null);
+
+    const continueTitle = computed(() => {
+        if (latestSession.value === null) {
+            return 'Begin your first interview session';
+        }
+
+        return `${latestSession.value.job_role} — ${latestSession.value.interview_type.replaceAll('_', ' ')}`;
+    });
+
+    const continueSubtitle = computed(() => {
+        if (latestSession.value === null) {
+            return 'No completed sessions yet. Complete your first session to begin building your interview history.';
+        }
+
+        const durationMinutes = Math.max(1, Math.round(latestSession.value.duration_seconds / 60));
+        const score = latestSession.value.overall_score !== null ? latestSession.value.overall_score.toFixed(1) : '—';
+
+        return `Last score ${score} · ${durationMinutes}m`;
+    });
+
+    const continueLabel = computed(() => {
+        if (latestSession.value === null) {
+            return 'Interview';
+        }
+
+        return 'Continue';
+    });
 </script>
 
 <template>
@@ -33,30 +102,31 @@
                 <h1 class="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{{ greeting }},
                     <span class="font-serif italic font-normal text-muted-foreground">{{ firstName }}.</span>
                 </h1>
-                <p class="mt-1.5 text-sm text-muted-foreground">Your last session ended at 8.6. Keep going.</p>
+                <p class="mt-1.5 text-sm text-muted-foreground">{{ recentSummary }}</p>
             </section>
 
             <section class="surface mt-5 relative overflow-hidden rounded-2xl border border-hairline p-5 shadow-xs">
                 <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-soft"></div>
                 <div class="relative">
-                    <p class="text-[11px] font-medium uppercase tracking-wider text-brand">Continue</p>
-                    <h2 class="mt-1 text-lg font-semibold tracking-tight">Senior PM — Behavioral</h2>
-                    <p class="mt-1 text-xs text-muted-foreground">Last score 8.6 · 3 prompts left</p>
+                    <p class="text-[11px] font-medium uppercase tracking-wider text-brand">{{ continueLabel }}</p>
+                    <h2 class="mt-1 text-lg font-semibold tracking-tight">{{ continueTitle }}</h2>
+                    <p class="mt-1 text-xs text-muted-foreground">{{ continueSubtitle }}</p>
                     <div class="mt-4 flex items-center gap-2">
-                        <a href="/interview" class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background shadow-sm transition active:scale-[0.98]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic h-3.5 w-3.5" aria-hidden="true">
-                                <path d="M12 19v3"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                        <TextLink :href="route('user.interview.index')" class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background shadow-sm transition active:scale-[0.98]">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                                <path d="M12 19C15.31 19 18 16.31 18 13V8C18 4.69 15.31 2 12 2C8.69 2 6 4.69 6 8V13C6 16.31 8.69 19 12 19Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M3 11V13C3 17.97 7.03 22 12 22C16.97 22 21 17.97 21 13V11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M9.11011 7.47999C10.8901 6.82999 12.8301 6.82999 14.6101 7.47999" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M10.03 10.48C11.23 10.15 12.5 10.15 13.7 10.48" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
-                            Resume
-                        </a>
+                            Begin interview
+                        </TextLink>
 
-                        <a href="/feedback" class="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface px-4 py-2 text-xs font-medium text-foreground transition active:scale-[0.98]">Last feedback
+                        <TextLink v-if="latestSession" :href="route('user.feedback.show', { session: latestSession.id })" class="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface px-4 py-2 text-xs font-medium text-foreground transition active:scale-[0.98]">Last feedback
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right h-3 w-3" aria-hidden="true">
                                 <path d="m9 18 6-6-6-6"></path>
                             </svg>
-                        </a>
+                        </TextLink>
                     </div>
                 </div>
             </section>
@@ -66,472 +136,104 @@
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-medium text-muted-foreground">Sessions</p>
                         <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-mic h-3 w-3"
-                                aria-hidden="true"
-                            >
-                                <path d="M12 19v3"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                                <path d="M12 19C15.31 19 18 16.31 18 13V8C18 4.69 15.31 2 12 2C8.69 2 6 4.69 6 8V13C6 16.31 8.69 19 12 19Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M3 11V13C3 17.97 7.03 22 12 22C16.97 22 21 17.97 21 13V11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M9.11011 7.47999C10.8901 6.82999 12.8301 6.82999 14.6101 7.47999" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M10.03 10.48C11.23 10.15 12.5 10.15 13.7 10.48" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
                         </div>
                     </div>
-                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">23</p>
-                    <p class="mt-0.5 text-[11px] text-muted-foreground">+4</p>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">{{ sessionStats.total_sessions }}</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">Completed</p>
                 </div>
+
                 <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-medium text-muted-foreground">Avg score</p>
                         <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-trending-up h-3 w-3"
-                                aria-hidden="true"
-                            >
-                                <path d="M16 7h6v6"></path>
-                                <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                            <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M2.90533 2.90533C1.9898 3.82086 1.5 5.32397 1.5 7.75V13.75C1.5 16.176 1.9898 17.6791 2.90533 18.5947C3.82086 19.5102 5.32397 20 7.75 20H13.75C16.176 20 17.6791 19.5102 18.5947 18.5947C19.5102 17.6791 20 16.176 20 13.75V7.75C20 5.32397 19.5102 3.82086 18.5947 2.90533C17.6791 1.9898 16.176 1.5 13.75 1.5H7.75C5.32397 1.5 3.82086 1.9898 2.90533 2.90533ZM1.84467 1.84467C3.17914 0.510201 5.17603 0 7.75 0H13.75C16.324 0 18.3209 0.510201 19.6553 1.84467C20.9898 3.17914 21.5 5.17603 21.5 7.75V13.75C21.5 16.324 20.9898 18.3209 19.6553 19.6553C18.3209 20.9898 16.324 21.5 13.75 21.5H7.75C5.17603 21.5 3.17914 20.9898 1.84467 19.6553C0.510201 18.3209 0 16.324 0 13.75V7.75C0 5.17603 0.510201 3.17914 1.84467 1.84467Z" fill="currentColor"></path>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M14.3906 6.94965C14.6835 7.24254 14.6835 7.71742 14.3906 8.01031L7.85064 14.5503C7.55775 14.8432 7.08288 14.8432 6.78998 14.5503C6.49709 14.2574 6.49709 13.7825 6.78998 13.4896L13.33 6.94965C13.6229 6.65676 14.0977 6.65676 14.3906 6.94965Z" fill="currentColor"></path>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.73001 7.41C7.46491 7.41 7.25 7.62492 7.25 7.89001C7.25 8.15509 7.46489 8.37 7.73001 8.37C7.99511 8.37 8.20999 8.15511 8.20999 7.89001C8.20999 7.62489 7.99508 7.41 7.73001 7.41ZM5.75 7.89001C5.75 6.79649 6.63649 5.91 7.73001 5.91C8.82356 5.91 9.70999 6.79652 9.70999 7.89001C9.70999 8.98354 8.82353 9.87 7.73001 9.87C6.63651 9.87 5.75 8.98356 5.75 7.89001Z" fill="currentColor"></path>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M14.27 13.13C14.0049 13.13 13.79 13.3449 13.79 13.61C13.79 13.8751 14.0049 14.09 14.27 14.09C14.5351 14.09 14.75 13.8751 14.75 13.61C14.75 13.3449 14.5351 13.13 14.27 13.13ZM12.29 13.61C12.29 12.5165 13.1765 11.63 14.27 11.63C15.3635 11.63 16.25 12.5164 16.25 13.61C16.25 14.7035 15.3635 15.59 14.27 15.59C13.1765 15.59 12.29 14.7035 12.29 13.61Z" fill="currentColor"></path>
                             </svg>
                         </div>
                     </div>
-                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">8.2</p>
-                    <p class="mt-0.5 text-[11px] text-muted-foreground">+0.6</p>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">
+                        {{ sessionStats.average_score !== null ? sessionStats.average_score.toFixed(1) : '—' }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">Across completed sessions</p>
                 </div>
+
                 <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-medium text-muted-foreground">Practice time</p>
                         <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-clock h-3 w-3"
-                                aria-hidden="true"
-                            >
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 6v6l4 2"></path>
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em">
+                                <path d="M11.9997 23.0106C5.93168 23.0106 0.999512 18.0784 0.999512 12.0104C0.999512 5.94243 5.93168 1.01026 11.9997 1.01026C18.0677 1.01026 22.9998 5.94243 22.9998 12.0104C22.9998 18.0784 18.0677 23.0106 11.9997 23.0106ZM11.9997 2.54517C6.78099 2.54517 2.53442 6.79175 2.53442 12.0104C2.53442 17.2291 6.78099 21.4757 11.9997 21.4757C17.2184 21.4757 21.4649 17.2291 21.4649 12.0104C21.4649 6.79175 17.2184 2.54517 11.9997 2.54517Z" fill="currentColor"></path>
+                                <path d="M15.7964 16.0317C15.6634 16.0317 15.5304 16.001 15.4076 15.9191L12.2354 14.0261C11.4475 13.5554 10.8643 12.5219 10.8643 11.6111V7.4157C10.8643 6.99616 11.2122 6.64825 11.6317 6.64825C12.0513 6.64825 12.3992 6.99616 12.3992 7.4157V11.6111C12.3992 11.9795 12.7061 12.5219 13.0234 12.706L16.1955 14.5991C16.5639 14.814 16.6764 15.2847 16.4615 15.6531C16.3081 15.8987 16.0522 16.0317 15.7964 16.0317Z" fill="currentColor"></path>
                             </svg>
                         </div>
                     </div>
-                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">9h 12m</p>
-                    <p class="mt-0.5 text-[11px] text-muted-foreground">+1h 30m</p>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">{{ totalPracticeTime }}</p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">Total interview time</p>
                 </div>
+
                 <div class="surface rounded-xl border border-hairline p-4 shadow-xs">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-medium text-muted-foreground">Mastery</p>
                         <div class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-target h-3 w-3"
-                                aria-hidden="true"
-                            >
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="12" r="6"></circle>
-                                <circle cx="12" cy="12" r="2"></circle>
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                                <path d="M9 8L9.51585 9.39406C10.1923 11.222 10.5305 12.136 11.1972 12.8028C11.864 13.4695 12.778 13.8077 14.6059 14.4841L16 15L14.6059 15.5159C12.778 16.1923 11.864 16.5305 11.1972 17.1972C10.5305 17.864 10.1923 18.778 9.51585 20.6059L9 22L8.48415 20.6059C7.80775 18.778 7.46953 17.864 6.80276 17.1972C6.13604 16.5305 5.22204 16.1923 3.39406 15.5159L2 15L3.39406 14.4841C5.22204 13.8077 6.13604 13.4695 6.80276 12.8028C7.46953 12.136 7.80775 11.222 8.48415 9.39406L9 8Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"></path>
+                                <path d="M17 3L17.2948 3.79661C17.6813 4.84116 17.8746 5.36345 18.2556 5.74444C18.6366 6.12544 19.1588 6.31871 20.2034 6.70523L21 7L20.2034 7.29477C19.1588 7.68129 18.6366 7.87456 18.2556 8.25556C17.8746 8.63655 17.6813 9.15884 17.2948 10.2034L17 11L16.7052 10.2034C16.3187 9.15884 16.1254 8.63655 15.7444 8.25556C15.3634 7.87456 14.8412 7.68129 13.7966 7.29477L13 7L13.7966 6.70523C14.8412 6.31871 15.3634 6.12544 15.7444 5.74444C16.1254 5.36345 16.3187 4.84116 16.7052 3.79661L17 3Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"></path>
                             </svg>
                         </div>
                     </div>
-                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">62%</p>
-                    <p class="mt-0.5 text-[11px] text-muted-foreground">Story.</p>
+                    <p class="mt-2 text-xl font-semibold tabular-nums tracking-tight">
+                        {{ sessionStats.average_score !== null ? `${Math.round((sessionStats.average_score / 10) * 100)}%` : '—' }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">Derived from average score</p>
                 </div>
             </section>
-
-            <div class="mt-5 grid gap-5 md:grid-cols-2">
-                <section class="surface rounded-2xl border border-hairline p-5 shadow-xs">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-sm font-semibold tracking-tight">Score trajectory</h3>
-                            <p class="text-[11px] text-muted-foreground">Last 6 sessions</p>
-                        </div>
-
-                        <div
-                            class="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-trending-up h-3 w-3"
-                                aria-hidden="true"
-                            >
-                                <path d="M16 7h6v6"></path>
-                                <path d="m22 7-8.5 8.5-5-5L2 17"></path></svg
-                            >+18%
-                        </div>
-                    </div>
-                    <div class="mt-5 flex h-32 items-end gap-2">
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 64%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">6.4</span>
-                        </div>
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 71%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.1</span>
-                        </div>
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 70%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.0</span>
-                        </div>
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 79%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">7.9</span>
-                        </div>
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 82%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.2</span>
-                        </div>
-                        <div class="flex flex-1 flex-col items-center gap-1.5">
-                            <div class="relative w-full flex-1 overflow-hidden rounded-md bg-brand-soft">
-                                <div
-                                    class="absolute bottom-0 left-0 right-0 rounded-md bg-brand"
-                                    style="height: 86%"
-                                ></div>
-                            </div>
-                            <span class="text-[10px] font-medium tabular-nums text-muted-foreground">8.6</span>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="surface rounded-2xl border border-hairline p-5 shadow-xs">
-                    <h3 class="text-sm font-semibold tracking-tight">Practice mix</h3>
-                    <div class="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-2">
-                        <div class="bg-brand" style="width: 47.8261%"></div>
-                        <div class="bg-foreground" style="width: 21.7391%"></div>
-                        <div class="bg-success" style="width: 17.3913%"></div>
-                        <div class="bg-warning" style="width: 13.0435%"></div>
-                    </div>
-                    <ul class="mt-4 space-y-2.5">
-                        <li class="flex items-center justify-between text-xs">
-                                <span class="flex items-center gap-2"
-                                ><span class="h-1.5 w-1.5 rounded-full bg-brand"></span>Behavioral</span
-                                ><span class="text-muted-foreground tabular-nums">11</span>
-                        </li>
-                        <li class="flex items-center justify-between text-xs">
-                                <span class="flex items-center gap-2"
-                                ><span class="h-1.5 w-1.5 rounded-full bg-foreground"></span>System design</span
-                                ><span class="text-muted-foreground tabular-nums">5</span>
-                        </li>
-                        <li class="flex items-center justify-between text-xs">
-                                <span class="flex items-center gap-2"
-                                ><span class="h-1.5 w-1.5 rounded-full bg-success"></span>Portfolio</span
-                                ><span class="text-muted-foreground tabular-nums">4</span>
-                        </li>
-                        <li class="flex items-center justify-between text-xs">
-                                <span class="flex items-center gap-2"
-                                ><span class="h-1.5 w-1.5 rounded-full bg-warning"></span>Case study</span
-                                ><span class="text-muted-foreground tabular-nums">3</span>
-                        </li>
-                    </ul>
-                </section>
-            </div>
 
             <section class="mt-6">
-                <div class="mb-2 flex items-center justify-between px-1">
-                    <h3 class="text-sm font-semibold tracking-tight">Recent sessions</h3>
-                    <button class="text-[11px] font-medium text-muted-foreground hover:text-foreground">
-                        See all
-                    </button>
-                </div>
-                <div
-                    class="surface divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline shadow-xs"
-                >
-                    <a
-                        href="/feedback"
-                        class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
-                    ><div
-                        class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="lucide lucide-mic h-3.5 w-3.5"
-                            aria-hidden="true"
-                        >
-                            <path d="M12 19v3"></path>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                            <rect x="9" y="2" width="6" height="13" rx="3"></rect>
-                        </svg>
+                <template v-if="recentSessions.length > 0">
+                    <div class="mb-2 flex items-center justify-between px-1">
+                        <h3 class="text-sm font-semibold tracking-tight">Recent sessions</h3>
                     </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium">Senior Product Manager</p>
-                            <p class="text-[11px] text-muted-foreground">Behavioral · 24m · Today</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm font-semibold tabular-nums">8.6</p>
-                            <p class="text-[10px] font-medium tabular-nums text-success">+0.4</p>
-                        </div>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
-                            aria-hidden="true"
-                        >
-                            <path d="M7 7h10v10"></path>
-                            <path d="M7 17 17 7"></path></svg></a
-                    ><a
-                    href="/feedback"
-                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
-                ><div
-                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-mic h-3.5 w-3.5"
-                        aria-hidden="true"
-                    >
-                        <path d="M12 19v3"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
-                    </svg>
-                </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium">Staff Engineer</p>
-                        <p class="text-[11px] text-muted-foreground">System design · 31m · Yesterday</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm font-semibold tabular-nums">7.9</p>
-                        <p class="text-[10px] font-medium tabular-nums text-success">+0.7</p>
-                    </div>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                    >
-                        <path d="M7 7h10v10"></path>
-                        <path d="M7 17 17 7"></path></svg></a
-                ><a
-                    href="/feedback"
-                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
-                ><div
-                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-mic h-3.5 w-3.5"
-                        aria-hidden="true"
-                    >
-                        <path d="M12 19v3"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
-                    </svg>
-                </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium">Brand Designer</p>
-                        <p class="text-[11px] text-muted-foreground">Portfolio · 18m · Mar 18</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm font-semibold tabular-nums">9.1</p>
-                        <p class="text-[10px] font-medium tabular-nums text-success">+0.2</p>
-                    </div>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                    >
-                        <path d="M7 7h10v10"></path>
-                        <path d="M7 17 17 7"></path></svg></a
-                ><a
-                    href="/feedback"
-                    class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2"
-                ><div
-                    class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-mic h-3.5 w-3.5"
-                        aria-hidden="true"
-                    >
-                        <path d="M12 19v3"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <rect x="9" y="2" width="6" height="13" rx="3"></rect>
-                    </svg>
-                </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium">Engineering Manager</p>
-                        <p class="text-[11px] text-muted-foreground">Leadership · 27m · Mar 16</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm font-semibold tabular-nums">7.2</p>
-                        <p class="text-[10px] font-medium tabular-nums text-destructive">-0.3</p>
-                    </div>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-arrow-up-right h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                    >
-                        <path d="M7 7h10v10"></path>
-                        <path d="M7 17 17 7"></path></svg
-                    ></a>
-                </div>
-            </section>
 
-            <section class="surface mt-5 flex items-center gap-3 rounded-2xl border border-hairline p-4 shadow-xs">
-                <div
-                    class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-foreground text-background"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-sparkles h-4 w-4"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-                        ></path>
-                        <path d="M20 2v4"></path>
-                        <path d="M22 4h-4"></path>
-                        <circle cx="4" cy="20" r="2"></circle>
-                    </svg>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium">Sharpen your storytelling</p>
-                    <p class="text-[11px] text-muted-foreground">5 prompts focused on impact-first answers</p>
-                </div>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-chevron-right h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                >
-                    <path d="m9 18 6-6-6-6"></path>
-                </svg>
+                    <div class="surface divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline shadow-xs">
+                        <TextLink v-for="session in recentSessions" :key="session.id" :href="route('user.feedback.show', { session: session.id })" class="flex items-center gap-3 px-4 py-3.5 transition active:bg-surface-2">
+                            <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic h-3.5 w-3.5" aria-hidden="true">
+                                    <path d="M12 19v3"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+                                </svg>
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-medium">{{ session.job_role }}</p>
+                                <p class="text-[11px] text-muted-foreground">
+                                    {{ session.interview_type.replaceAll('_', ' ') }} · {{ Math.max(1, Math.round(session.duration_seconds / 60)) }}m
+                                </p>
+                            </div>
+
+                            <div class="text-right">
+                                <p class="text-sm font-semibold tabular-nums">{{ session.overall_score !== null ? session.overall_score.toFixed(1) : '—' }}</p>
+                            </div>
+                        </TextLink>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <NotFoundEmptyState title="No recent sessions yet" description="Start your first interview to build your performance history and unlock feedback.">
+                        <TextLink :href="route('user.interview.index')" class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background shadow-sm transition active:scale-[0.98]">
+                            Begin interview
+                        </TextLink>
+                    </NotFoundEmptyState>
+                </template>
             </section>
         </main>
 

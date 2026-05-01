@@ -19,6 +19,7 @@ final class AnalyzeSessionFeedbackRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'interview_session_id' => ['required', 'integer', 'exists:interview_sessions,id'],
             'messages' => ['array', 'max:500'],
             'messages.*.speaker' => ['required', 'string', 'in:user,agent'],
             'messages.*.text' => ['required', 'string', 'max:20000'],

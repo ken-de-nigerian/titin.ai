@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Auth\PostLoginRedirectContract;
+use App\Contracts\Interview\InterviewSessionRepositoryContract;
 use App\Contracts\User\ParsedCvProfileRepositoryContract;
 use App\Contracts\User\ProfilePhotoStorageContract;
 use App\Contracts\User\UserCvRepositoryContract;
 use App\Contracts\User\UserProfileRepositoryContract;
+use App\Repositories\Interview\EloquentInterviewSessionRepository;
 use App\Repositories\User\EloquentParsedCvProfileRepository;
 use App\Repositories\User\EloquentUserCvRepository;
 use App\Repositories\User\EloquentUserProfileRepository;
@@ -32,6 +34,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserProfileRepositoryContract::class, EloquentUserProfileRepository::class);
         $this->app->bind(UserCvRepositoryContract::class, EloquentUserCvRepository::class);
         $this->app->bind(ParsedCvProfileRepositoryContract::class, EloquentParsedCvProfileRepository::class);
+        $this->app->bind(InterviewSessionRepositoryContract::class, EloquentInterviewSessionRepository::class);
     }
 
     /**

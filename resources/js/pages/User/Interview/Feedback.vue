@@ -13,6 +13,7 @@
 
     const props = defineProps<{
         feedback: SessionFeedbackPayload | null;
+        sessionId: number | null;
     }>();
 
     const hasScores = computed(

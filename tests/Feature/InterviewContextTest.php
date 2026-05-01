@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\UserCv;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 
 uses(RefreshDatabase::class);
 
@@ -34,6 +35,7 @@ it('uses user cv records to determine resume availability', function () {
 
     expect((string) $response->json('context_notes'))
         ->toContain('Candidate has uploaded a resume. Prioritize role-relevant, experience-based questions.');
+    expect(Arr::get($response->json(), 'prompt_context.schema_version'))->toBe('prompt_context.v1');
 });
 
 it('does not use legacy resume path alone to determine resume availability', function () {

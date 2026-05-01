@@ -71,6 +71,7 @@ Route::prefix('user')
                 ->controller(SessionFeedbackController::class)
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
+                    Route::get('/{session}', 'show')->name('show');
                     Route::post('/analyze', 'analyze')
                         ->middleware('throttle:30,1')
                         ->name('analyze');

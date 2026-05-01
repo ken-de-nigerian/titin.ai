@@ -11,10 +11,14 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-final class InterviewTokenService
+final readonly class InterviewTokenService
 {
+    public function __construct(
+        private InterviewPromptContextService $promptContextService,
+    ) {}
+
     /**
-     * @return array{token: string, room: string}
+     * @return array{token: string, room: string, prompt_context: array<string, mixed>}
      *
      * @throws RequestException|ConnectionException
      */
@@ -27,8 +31,15 @@ final class InterviewTokenService
             throw new RuntimeException('LiveKit token server integration is not configured.');
         }
 
-        $jobRole = trim((string) ($data->jobRole ?? $user->job_role ?? 'Software Engineer'));
-        $interviewType = trim((string) ($data->interviewType ?? $user->interview_type ?? config('settings.interview.default_type', 'mixed')));
+        $promptContext = $this->promptContextService->build($user, $data);
+        /** @var array{user_id:int,name:string,job_role:string} $candidate */
+        $candidate = $promptContext['candidate'];
+        /** @var array{mode:string,type:string} $interview */
+        $interview = $promptContext['interview'];
+        /** @var array{question_count:int,concise_feedback:bool} $session */
+        $session = $promptContext['session'];
+        /** @var array{context_notes:string} $instructions */
+        $instructions = $promptContext['instructions'];
 
         $response = Http::acceptJson()
             ->asJson()
@@ -39,12 +50,16 @@ final class InterviewTokenService
             ->timeout(10)
             ->retry(2, 200)
             ->post(rtrim($tokenServerUrl, '/').'/internal/issue-token', [
-                'user_id' => (int) $user->id,
+                'user_id' => $candidate['user_id'],
                 'email' => (string) $user->email,
-                'name' => (string) $user->name,
-                'job_role' => $jobRole !== '' ? $jobRole : 'Software Engineer',
-                'interview_type' => $interviewType !== '' ? $interviewType : (string) config('settings.interview.default_type', 'mixed'),
-                'concise_feedback' => (bool) $user->prefers_concise_feedback,
+                'name' => $candidate['name'],
+                'job_role' => $candidate['job_role'],
+                'interview_mode' => $interview['mode'],
+                'interview_type' => $interview['type'],
+                'question_count' => $session['question_count'],
+                'concise_feedback' => $session['concise_feedback'],
+                'context_notes' => $instructions['context_notes'],
+                'prompt_context' => $promptContext,
             ])
             ->throw();
 
@@ -57,6 +72,7 @@ final class InterviewTokenService
         return [
             'token' => (string) $payload['token'],
             'room' => (string) $payload['room'],
+            'prompt_context' => $promptContext,
         ];
     }
 }

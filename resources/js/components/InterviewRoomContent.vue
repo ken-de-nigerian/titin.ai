@@ -16,6 +16,7 @@
     const props = withDefaults(
         defineProps<{
             sessionMeta?: InterviewSessionMeta;
+            interviewSessionId: number;
         }>(),
         {
             sessionMeta: () => ({
@@ -23,11 +24,13 @@
                 interview_type: 'behavioral',
                 question_count: 6,
             }),
+            interviewSessionId: 0,
         },
     );
 
     const emit = defineEmits<{
         end: [payload: SessionEndPayload];
+        retryJoin: [];
     }>();
 
     interface TranscriptMessage {
@@ -71,6 +74,53 @@
 
     const latestAgentLine = ref('');
     const hasAgentCaption = computed(() => latestAgentLine.value.trim().length > 0);
+    const hasInterviewerJoined = computed(() => {
+        const activeRoom = room.value;
+
+        if (!activeRoom) {
+            return false;
+        }
+
+        return activeRoom.remoteParticipants.size > 0;
+    });
+    const waitingForInterviewer = computed(() => {
+        const state = room.value?.state;
+
+        if (state === undefined || state === ConnectionState.Disconnected) {
+            return false;
+        }
+
+        if (state !== ConnectionState.Connected) {
+            return true;
+        }
+
+        return !hasInterviewerJoined.value;
+    });
+    const isSlowJoin = ref(false);
+    const hasRequestedRetry = ref(false);
+
+    watch(
+        waitingForInterviewer,
+        (waiting, _, onCleanup) => {
+            if (!waiting) {
+                isSlowJoin.value = false;
+
+                return;
+            }
+
+            const timeoutId = window.setTimeout(() => {
+                isSlowJoin.value = true;
+
+                if (!hasRequestedRetry.value) {
+                    hasRequestedRetry.value = true;
+                    emit('retryJoin');
+                }
+            }, 15000);
+
+            onCleanup(() => window.clearTimeout(timeoutId));
+        },
+        { immediate: true },
+    );
 
     watch(
         () => room.value,
@@ -214,6 +264,7 @@
 
     function emitEnd(): void {
         emit('end', {
+            interview_session_id: props.interviewSessionId,
             messages: transcriptMessages.value.map((m) => ({
                 speaker: m.speaker,
                 text: m.text,
@@ -259,6 +310,14 @@
         <div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
             <Orb :state="orbState" :size="orbDisplaySize" interactive/>
 
+            <div
+                v-if="waitingForInterviewer"
+                class="mt-6 inline-flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-xs"
+            >
+                <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+                {{ isSlowJoin ? 'Still connecting, retrying...' : 'Interviewer is joining...' }}
+            </div>
+
             <Transition
                 v-if="true"
                 :key="animationKey"
@@ -283,7 +342,11 @@
                                 : 'text-lg font-normal text-muted-foreground md:text-xl'
                         ">
                         {{
-                            hasAgentCaption
+                            waitingForInterviewer
+                                ? (isSlowJoin
+                                    ? 'Connection is taking longer than expected. We are retrying now.'
+                                    : 'Setting up your interviewer now. The first question will begin automatically.')
+                                : hasAgentCaption
                                 ? latestAgentLine
                                 : "The interviewer's words will appear here when they speak."
                         }}

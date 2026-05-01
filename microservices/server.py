@@ -437,10 +437,15 @@ async def issue_token_internal():
     # Stable identity consumed by the agent.
     identity = f"user_{user_id}"
     room = payload.get("room")
+    interview_mode = str(payload.get("interview_mode") or "simulation")
     job_role = str(payload.get("job_role") or "Software Engineer")
     interview_type = str(payload.get("interview_type") or "behavioral")
     email = str(payload.get("email") or "")
     concise_feedback = bool(payload.get("concise_feedback", False))
+    question_count = int(payload.get("question_count") or 6)
+    context_notes = str(payload.get("context_notes") or "")
+    raw_prompt_context = payload.get("prompt_context")
+    prompt_context = raw_prompt_context if isinstance(raw_prompt_context, dict) else {}
 
     if not room:
         room = await generate_room_name()
@@ -449,10 +454,14 @@ async def issue_token_internal():
         {
             "user_id": user_id,
             "email": email,
+            "interview_mode": interview_mode,
             "job_role": job_role,
             "interview_type": interview_type,
+            "question_count": question_count,
             "candidate_name": name,
             "concise_feedback": concise_feedback,
+            "context_notes": context_notes,
+            "prompt_context": prompt_context,
         }
     )
 

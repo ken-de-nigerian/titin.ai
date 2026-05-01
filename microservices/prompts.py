@@ -1,34 +1,24 @@
-INTERVIEW_TYPE_CONTEXT = {
-    "behavioral": (
-        "Focus on past behaviour and situational questions. "
-        "Use the STAR method (Situation, Task, Action, Result) as your evaluation lens. "
-        "Ask questions like 'Tell me about a time when...' or 'Describe a situation where...'"
-    ),
-    "technical": (
-        "Focus on technical knowledge, problem-solving, and system design relevant to the role. "
-        "Ask about specific technologies, trade-offs, and real-world scenarios. "
-        "Probe deeper when answers are vague or incomplete."
-    ),
-    "role_specific": (
-        "Focus on role-specific competencies and domain knowledge for the job being applied for. "
-        "Tailor your questions tightly to the responsibilities and skills expected in this role."
-    ),
-}
+DEFAULT_INTERVIEW_TYPE_CONTEXT = (
+    "Ask role-relevant interview questions with clear structure and concise follow-ups."
+)
 
 DEFAULT_INTERVIEW_CONFIG = {
+    "interview_mode": "simulation",
     "job_role": "Software Engineer",
     "interview_type": "behavioral",
+    "interview_type_context": DEFAULT_INTERVIEW_TYPE_CONTEXT,
     "concise_feedback": False,
     "question_count": 6,
 }
 
 
 def build_system_prompt(config: dict) -> str:
-    interview_context = INTERVIEW_TYPE_CONTEXT.get(
-        config.get("interview_type"), INTERVIEW_TYPE_CONTEXT["behavioral"]
-    )
+    interview_context = str(
+        config.get("interview_type_context", DEFAULT_INTERVIEW_CONFIG["interview_type_context"])
+    ).strip() or DEFAULT_INTERVIEW_TYPE_CONTEXT
     job_role = config.get("job_role", DEFAULT_INTERVIEW_CONFIG["job_role"])
     interview_type = config.get("interview_type", DEFAULT_INTERVIEW_CONFIG["interview_type"])
+    interview_mode = str(config.get("interview_mode", DEFAULT_INTERVIEW_CONFIG["interview_mode"])).strip().lower()
     concise_feedback = bool(config.get("concise_feedback", DEFAULT_INTERVIEW_CONFIG["concise_feedback"]))
     question_count = config.get("question_count", DEFAULT_INTERVIEW_CONFIG["question_count"])
     candidate_name = str(config.get("candidate_name", "") or "").strip()
@@ -42,16 +32,25 @@ def build_system_prompt(config: dict) -> str:
             f"variable name aloud. Never say things like YOUR_NAME, your_name, or {{name}}.\n"
         )
 
-    feedback_style_block = (
-        "FEEDBACK STYLE:\n"
-        "- After each candidate answer, give concise feedback in one short sentence.\n"
-        "- Mention one clear strength and one specific improvement.\n"
-        "- Keep coaching brief and move quickly to the next question.\n"
-    ) if concise_feedback else (
-        "FEEDBACK STYLE:\n"
-        "- Keep acknowledgments brief by default.\n"
-        "- Give deeper coaching only when the candidate asks for detail or when an answer needs correction.\n"
-    )
+    if interview_mode == "simulation":
+        feedback_style_block = (
+            "SIMULATION MODE (REAL INTERVIEW HOT SEAT):\n"
+            "- Do not coach, hint, or improve the candidate's answer while the interview is running.\n"
+            "- Keep acknowledgments neutral and brief, then move to the next targeted question.\n"
+            "- Ask rigorous follow-ups when answers are vague, shallow, or missing trade-off reasoning.\n"
+            "- Save evaluative feedback for the end summary only.\n"
+        )
+    else:
+        feedback_style_block = (
+            "FEEDBACK STYLE:\n"
+            "- After each candidate answer, give concise feedback in one short sentence.\n"
+            "- Mention one clear strength and one specific improvement.\n"
+            "- Keep coaching brief and move quickly to the next question.\n"
+        ) if concise_feedback else (
+            "FEEDBACK STYLE:\n"
+            "- Keep acknowledgments brief by default.\n"
+            "- Give deeper coaching only when the candidate asks for detail or when an answer needs correction.\n"
+        )
 
     context_block = ""
     if context_notes:
@@ -61,10 +60,11 @@ def build_system_prompt(config: dict) -> str:
             "Use this context to personalize questions, but do not quote raw JSON or mention internal data sources.\n"
         )
 
-    return f"""You are a professional job interviewer conducting a paid mock interview session.
+    return f"""You are a professional job interviewer conducting a realistic live interview session.
 
 Role being interviewed for: {job_role}
 Interview type: {interview_type}
+Interview mode: {interview_mode}
 Target number of questions to reach (including follow-ups where needed): {question_count}
 {greeting_hint}
 {interview_context}
