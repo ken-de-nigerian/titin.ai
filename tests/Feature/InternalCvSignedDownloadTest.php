@@ -25,7 +25,8 @@ it('allows GET on the signed internal CV download URL generated for the Python b
     $cv = UserCv::query()->create([
         'user_id' => $user->id,
         'path' => $diskPath,
-        'original_name' => 'doc.pdf',
+        'client_original_name' => 'doc.pdf',
+        'original_name' => 'doc_a1b2c3d4.pdf',
         'mime' => 'application/pdf',
         'size' => 900,
         'status' => UserCvStatus::Parsed,
@@ -49,5 +50,11 @@ it('allows GET on the signed internal CV download URL generated for the Python b
 
     expect($downloadUrl)->toStartWith('https://cv-signing.test/internal/cv/files/');
 
-    $this->get($downloadUrl)->assertOk()->assertHeader('content-type', 'application/pdf');
+    $response = $this->get($downloadUrl);
+
+    $response
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+
+    expect($response->headers->get('content-disposition', ''))->toContain('doc.pdf');
 });

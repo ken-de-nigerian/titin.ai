@@ -30,30 +30,6 @@ return [
 
     'connections' => [
 
-        'reverb' => [
-            'driver' => 'reverb',
-            'key' => env('REVERB_APP_KEY'),
-            'secret' => env('REVERB_APP_SECRET'),
-            'app_id' => env('REVERB_APP_ID'),
-            'options' => [
-                'host' => env('REVERB_HOST'),
-                'port' => env('REVERB_PORT', 443),
-                'scheme' => env('REVERB_SCHEME', 'https'),
-                'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
-            ],
-            'client_options' => [
-                /*
-                 | Herd/Valet/Reverb HTTPS local servers often chain to a CA that PHP's openssl bundle
-                 | does not trust (cURL error 60). Disable verification only locally via .env —
-                 | keep true everywhere that uses a publicly trusted TLS chain.
-                 */
-                'verify' => filter_var(
-                    env('REVERB_VERIFY_SSL', true),
-                    FILTER_VALIDATE_BOOLEAN
-                ),
-            ],
-        ],
-
         'pusher' => [
             'driver' => 'pusher',
             'key' => env('PUSHER_APP_KEY'),

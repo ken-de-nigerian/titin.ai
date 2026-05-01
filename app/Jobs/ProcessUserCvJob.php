@@ -90,7 +90,7 @@ final class ProcessUserCvJob implements ShouldQueue
                     'user_id' => (int) $userCv->user_id,
                     'cv_id' => (int) $userCv->id,
                     'file_url' => $resumeUrl,
-                    'file_name' => $userCv->original_name,
+                    'file_name' => $userCv->client_original_name ?? $userCv->original_name,
                     'callback_url' => $callbackUrl,
                 ])
                 ->throw();

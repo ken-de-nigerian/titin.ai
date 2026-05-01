@@ -1,21 +1,34 @@
 <script setup lang="ts">
-    import { Head, usePage } from '@inertiajs/vue3';
+    import { Head, router, usePoll } from '@inertiajs/vue3';
     import { CircleCheck, Download, Ellipsis, Star, Trash2 } from 'lucide-vue-next';
-    import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+    import { computed, onMounted, onUnmounted, ref, watch, withDefaults } from 'vue';
     import { useRoute } from '@/composables/useRoute';
     import AppLayout from "@/layouts/AppLayout.vue";
 
     const route = useRoute();
-    const page = usePage();
-    const authUser = computed(() => (page.props as { auth?: { user?: { id?: number; name?: string } } }).auth?.user ?? null);
+
+    type CvItemFromServer = {
+        id: number;
+        name: string;
+        size: number;
+        status: string;
+        is_active: boolean;
+        created_at: string | null;
+    };
+
+    const props = withDefaults(
+        defineProps<{
+            cvItems: CvItemFromServer[];
+        }>(),
+        {
+            cvItems: () => [],
+        },
+    );
 
     const resume = ref<File | null>(null);
-    /** CV id for the current upload pipeline; cleared when list shows parsed or failed. */
     const pendingPipelineCvId = ref<number | null>(null);
     const isUploading = ref(false);
     const uploadError = ref<string | null>(null);
-    let cvStatusChannel: ReturnType<NonNullable<typeof window.Echo>['private']> | null = null;
-    const echoUserId = ref<number | null>(null);
 
     type CvListItem = {
         id: number;
@@ -25,23 +38,43 @@
         status: string;
     };
 
-    const uploadedCvs = ref<CvListItem[]>([]);
+    function formatBytes(bytes: number): string {
+        if (bytes < 1024) {
+            return `${bytes} B`;
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${(bytes / 1024).toFixed(0)} KB`;
+        }
+
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatTimestamp(iso: string | null): string {
+        if (!iso) {
+            return 'Unknown date';
+        }
+
+        const date = new Date(iso);
+
+        return date.toLocaleString();
+    }
+
+    const uploadedCvs = computed<CvListItem[]>(() =>
+        props.cvItems.map((item) => ({
+            id: Number(item.id),
+            name: String(item.name ?? 'Untitled'),
+            meta: `${formatBytes(Number(item.size ?? 0))} · ${formatTimestamp(item.created_at ?? null)}`,
+            isActive: Boolean(item.is_active),
+            status: String(item.status ?? 'uploaded'),
+        })),
+    );
+
     const hasProcessingCv = computed(() =>
         uploadedCvs.value.some((item) => item.status === 'uploaded' || item.status === 'processing'),
     );
 
-    const resumeDisplayName = computed(() => {
-        const file = resume.value;
-
-        if (!file) {
-            return "";
-        }
-
-        const slug = (authUser.value?.name ?? "user").toLowerCase().replaceAll(" ", "_");
-
-        return `${slug}_${file.name}`;
-    });
-
+    const resumeDisplayName = computed(() => resume.value?.name ?? '');
     const showPipelinePanel = computed(
         () => resume.value !== null || pendingPipelineCvId.value !== null,
     );
@@ -108,26 +141,37 @@
         { deep: true },
     );
 
-    function formatBytes(bytes: number): string {
-        if (bytes < 1024) {
-            return `${bytes} B`;
-        }
+    const { start, stop } = usePoll(
+        2000,
+        {
+            only: ['cvItems'],
+        },
+        {
+            autoStart: false,
+        },
+    );
 
-        if (bytes < 1024 * 1024) {
-            return `${(bytes / 1024).toFixed(0)} KB`;
-        }
+    const shouldPoll = computed(() => hasProcessingCv.value || pendingPipelineCvId.value !== null);
 
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
+    watch(
+        shouldPoll,
+        (run) => {
+            if (run) {
+                start();
+            } else {
+                stop();
+            }
+        },
+        { immediate: true },
+    );
 
-    function formatTimestamp(iso: string | null): string {
-        if (!iso) {
-            return 'Unknown date';
-        }
-
-        const date = new Date(iso);
-
-        return date.toLocaleString();
+    function reloadCvItems(): Promise<void> {
+        return new Promise((resolve) => {
+            router.reload({
+                only: ['cvItems'],
+                onFinish: () => resolve(),
+            });
+        });
     }
 
     function statusLabel(status: string): string {
@@ -144,29 +188,6 @@
         }
 
         return 'Pending';
-    }
-
-    async function fetchCvItems(): Promise<void> {
-        const response = await fetch(route('user.cv.items.index'), {
-            headers: {
-                Accept: 'application/json',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-            throw new Error('Unable to load CV items.');
-        }
-
-        const payload = await response.json();
-        const items = Array.isArray(payload?.items) ? payload.items : [];
-        uploadedCvs.value = items.map((item: any) => ({
-            id: Number(item.id),
-            name: String(item.name ?? 'Untitled'),
-            meta: `${formatBytes(Number(item.size ?? 0))} · ${formatTimestamp(item.created_at ?? null)}`,
-            isActive: Boolean(item.is_active),
-            status: String(item.status ?? 'uploaded'),
-        }));
     }
 
     async function uploadResume(): Promise<void> {
@@ -195,8 +216,9 @@
 
             if (!response.ok) {
                 const errorMessage = payload?.errors?.resume?.[0] ?? payload?.message ?? 'Upload failed.';
+                uploadError.value = String(errorMessage);
 
-                throw new Error(String(errorMessage));
+                return;
             }
 
             const item = payload?.item as { id?: number } | undefined;
@@ -205,7 +227,7 @@
                 pendingPipelineCvId.value = Number(item.id);
             }
 
-            await fetchCvItems();
+            await reloadCvItems();
             resume.value = null;
         } catch (error) {
             uploadError.value = error instanceof Error ? error.message : 'Upload failed.';
@@ -296,7 +318,7 @@
                 'X-Requested-With': 'XMLHttpRequest',
             },
         });
-        await fetchCvItems();
+        await reloadCvItems();
         closeCvMenu();
     };
 
@@ -314,7 +336,7 @@
             pendingPipelineCvId.value = null;
         }
 
-        await fetchCvItems();
+        await reloadCvItems();
         closeCvMenu();
     };
 
@@ -328,28 +350,10 @@
 
     onMounted(() => {
         document.addEventListener("click", onDocumentPointerCloseMenus);
-        void fetchCvItems();
-
-        const uid = authUser.value?.id;
-
-        if (window.Echo && typeof uid === 'number') {
-            echoUserId.value = uid;
-            cvStatusChannel = window.Echo.private(`App.Models.User.${uid}`);
-            cvStatusChannel.listen('.cv.status.updated', () => {
-                void fetchCvItems();
-            });
-        }
-
     });
 
     onUnmounted(() => {
         document.removeEventListener("click", onDocumentPointerCloseMenus);
-
-        if (window.Echo && echoUserId.value !== null) {
-            window.Echo.leave(`private-App.Models.User.${echoUserId.value}`);
-            cvStatusChannel = null;
-            echoUserId.value = null;
-        }
     });
 </script>
 
@@ -367,7 +371,7 @@
                             <path d="M8 13H12" stroke="currentColor" stroke-width="1.75" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path>
                             <path d="M8 17H16" stroke="currentColor" stroke-width="1.75" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                        CV / Resume (optional)
+                        CV / Resume
                     </h3>
                     <p class="text-sm text-muted-foreground">Upload your CV for personalized interview questions</p>
                 </div>
@@ -430,7 +434,7 @@
             <section class="mt-6">
                 <div class="mb-3 px-1">
                     <h2 class="text-sm font-semibold tracking-tight text-foreground">
-                        Uploaded ({{ uploadedCvs.length }})
+                        Uploaded Cv / Resume ({{ uploadedCvs.length }})
                     </h2>
                     <p class="mt-0.5 text-xs text-muted-foreground">Active marked with ★</p>
                     <p v-if="hasProcessingCv" class="mt-1 text-xs text-muted-foreground animate-pulse">

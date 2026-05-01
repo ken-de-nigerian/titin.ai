@@ -24,10 +24,11 @@ final class CvFileDownloadController extends Controller
         }
 
         $contents = $disk->get($cv->path);
+        $downloadName = $cv->client_original_name ?? $cv->original_name;
 
         return response($contents, 200, [
             'Content-Type' => $cv->mime,
-            'Content-Disposition' => 'attachment; filename="'.$cv->original_name.'"',
+            'Content-Disposition' => 'attachment; filename="'.$downloadName.'"',
         ]);
     }
 }

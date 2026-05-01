@@ -12,9 +12,7 @@
         "php": "^8.4",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.0",
-        "laravel/reverb": "^1.10",
         "laravel/tinker": "^3.0",
-        "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-activitylog": "^5.0",
         "tightenco/ziggy": "^2.6"
     },

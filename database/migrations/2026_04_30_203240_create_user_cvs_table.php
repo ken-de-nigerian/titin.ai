@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('path');
+            $table->string('client_original_name')->after('path');
             $table->string('original_name');
             $table->string('mime', 100);
             $table->unsignedBigInteger('size');

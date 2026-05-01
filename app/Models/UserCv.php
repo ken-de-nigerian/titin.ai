@@ -15,6 +15,7 @@ use Illuminate\Support\HigherOrderCollectionProxy;
  * @property mixed $user_id
  * @property mixed $id
  * @property mixed $original_name
+ * @property mixed $client_original_name
  * @property mixed $status
  * @property mixed $is_active
  * @property mixed $size
@@ -26,6 +27,7 @@ use Illuminate\Support\HigherOrderCollectionProxy;
 #[Fillable([
     'user_id',
     'path',
+    'client_original_name',
     'original_name',
     'mime',
     'size',

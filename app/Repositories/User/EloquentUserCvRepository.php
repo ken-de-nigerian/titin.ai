@@ -8,6 +8,7 @@ use App\Contracts\User\UserCvRepositoryContract;
 use App\Enums\UserCvStatus;
 use App\Models\User;
 use App\Models\UserCv;
+use App\Support\UserCvStoredDisplayName;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +33,13 @@ final class EloquentUserCvRepository implements UserCvRepositoryContract
             UserCv::query()->whereBelongsTo($user)->where('is_active', true)->update(['is_active' => false]);
 
             $mime = $resume->getMimeType() ?? 'application/octet-stream';
+            $clientOriginalName = $resume->getClientOriginalName();
 
             return UserCv::query()->create([
                 'user_id' => $user->id,
                 'path' => $path,
-                'original_name' => $resume->getClientOriginalName(),
+                'client_original_name' => $clientOriginalName,
+                'original_name' => UserCvStoredDisplayName::uniqueFromClientName($clientOriginalName),
                 'mime' => $mime,
                 'size' => (int) $resume->getSize(),
                 'status' => UserCvStatus::Uploaded,

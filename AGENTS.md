@@ -13,7 +13,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - inertiajs/inertia-laravel (INERTIA_LARAVEL) - v3
 - laravel/framework (LARAVEL) - v13
 - laravel/prompts (PROMPTS) - v0
-- laravel/reverb (REVERB) - v1
 - tightenco/ziggy (ZIGGY) - v2
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
@@ -23,7 +22,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - pestphp/pest (PEST) - v4
 - phpunit/phpunit (PHPUNIT) - v12
 - @inertiajs/vue3 (INERTIA_VUE) - v3
-- laravel-echo (ECHO) - v2
 - tailwindcss (TAILWINDCSS) - v4
 - vue (VUE) - v3
 - eslint (ESLINT) - v9

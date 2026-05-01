@@ -14,7 +14,8 @@ it('keeps only one active CV per user after activation', function () {
     $first = UserCv::query()->create([
         'user_id' => $user->id,
         'path' => 'resumes/1/first.pdf',
-        'original_name' => 'first.pdf',
+        'client_original_name' => 'first.pdf',
+        'original_name' => 'first_a1b2c3d4.pdf',
         'mime' => 'application/pdf',
         'size' => 1200,
         'status' => 'parsed',
@@ -24,7 +25,8 @@ it('keeps only one active CV per user after activation', function () {
     $second = UserCv::query()->create([
         'user_id' => $user->id,
         'path' => 'resumes/1/second.pdf',
-        'original_name' => 'second.pdf',
+        'client_original_name' => 'second.pdf',
+        'original_name' => 'second_e5f6g7h8.pdf',
         'mime' => 'application/pdf',
         'size' => 1800,
         'status' => 'parsed',

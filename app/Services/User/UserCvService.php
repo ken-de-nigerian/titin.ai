@@ -9,7 +9,6 @@ use App\Contracts\User\UserCvRepositoryContract;
 use App\DTOs\User\CvParseCallbackData;
 use App\DTOs\User\StoreUserCvData;
 use App\Enums\UserCvStatus;
-use App\Events\UserCvStatusUpdated;
 use App\Models\User;
 use App\Models\UserCv;
 use Illuminate\Support\Collection;
@@ -29,36 +28,21 @@ final readonly class UserCvService
 
     public function upload(User $user, StoreUserCvData $data, string $path): UserCv
     {
-        $cv = $this->userCvRepository->createAsActive($user, $data->resume, $path);
-        UserCvStatusUpdated::dispatch($cv);
-
-        return $cv;
+        return $this->userCvRepository->createAsActive($user, $data->resume, $path);
     }
 
     public function activate(User $user, UserCv $cv): UserCv
     {
-        $updatedCv = $this->userCvRepository->activate($user, $cv);
-        UserCvStatusUpdated::dispatch($updatedCv);
-
-        return $updatedCv;
+        return $this->userCvRepository->activate($user, $cv);
     }
 
     public function markStatus(UserCv $cv, UserCvStatus $status): UserCv
     {
-        $updatedCv = $this->userCvRepository->markStatus($cv, $status);
-        UserCvStatusUpdated::dispatch($updatedCv);
-
-        return $updatedCv;
+        return $this->userCvRepository->markStatus($cv, $status);
     }
 
     public function remove(UserCv $cv): void
     {
-        $deletedSnapshot = $cv->replicate();
-        $deletedSnapshot->setAttribute('id', $cv->id);
-        $deletedSnapshot->setAttribute('status', UserCvStatus::Deleted);
-        $deletedSnapshot->setAttribute('is_active', false);
-        UserCvStatusUpdated::dispatch($deletedSnapshot);
-
         $this->userCvRepository->delete($cv);
     }
 
