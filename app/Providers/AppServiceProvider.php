@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Auth\PostLoginRedirectContract;
-use App\Contracts\User\CandidateResumeStorageContract;
 use App\Contracts\User\ParsedCvProfileRepositoryContract;
 use App\Contracts\User\ProfilePhotoStorageContract;
 use App\Contracts\User\UserCvRepositoryContract;
@@ -14,7 +13,6 @@ use App\Repositories\User\EloquentParsedCvProfileRepository;
 use App\Repositories\User\EloquentUserCvRepository;
 use App\Repositories\User\EloquentUserProfileRepository;
 use App\Services\Auth\PostLoginRedirectService;
-use App\Services\User\CandidateResumeStorageService;
 use App\Services\User\ProfilePhotoStorageService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -30,7 +28,6 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(PostLoginRedirectContract::class, PostLoginRedirectService::class);
-        $this->app->bind(CandidateResumeStorageContract::class, CandidateResumeStorageService::class);
         $this->app->bind(ProfilePhotoStorageContract::class, ProfilePhotoStorageService::class);
         $this->app->bind(UserProfileRepositoryContract::class, EloquentUserProfileRepository::class);
         $this->app->bind(UserCvRepositoryContract::class, EloquentUserCvRepository::class);

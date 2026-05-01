@@ -13,7 +13,7 @@ final class WelcomeNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function via(object $notifiable): array
+    public function via(): array
     {
         return ['mail'];
     }

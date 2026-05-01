@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Internal;
 use App\Http\Controllers\Controller;
 use App\Models\ParsedCvProfile;
 use App\Models\User;
+use App\Models\UserCv;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,7 +31,11 @@ final class InterviewContextController extends Controller
             sprintf('Interview type preference: %s', $user->interview_type ?? 'mixed'),
         ];
 
-        if (is_string($user->resume_path) && $user->resume_path !== '') {
+        $hasUploadedCv = UserCv::query()
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if ($hasUploadedCv) {
             $contextLines[] = 'Candidate has uploaded a resume. Prioritize role-relevant, experience-based questions.';
         } else {
             $contextLines[] = 'No parsed resume context available yet. Start broad and adapt from answers.';

@@ -26,6 +26,12 @@ final readonly class UserCvService
         return $this->userCvRepository->listForUser($user);
     }
 
+    /** @return Collection<int, UserCv> */
+    public function listLatestForUser(User $user): Collection
+    {
+        return $this->userCvRepository->listLatestForUser($user);
+    }
+
     public function upload(User $user, StoreUserCvData $data, string $path): UserCv
     {
         return $this->userCvRepository->createAsActive($user, $data->resume, $path);

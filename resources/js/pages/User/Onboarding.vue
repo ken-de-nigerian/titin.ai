@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import {Head, router, useForm, usePage} from '@inertiajs/vue3';
-    import {computed, ref} from 'vue';
+import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
+    import { computed, ref, watch, withDefaults } from 'vue';
     import ActionButton from '@/components/ActionButton.vue';
     import FormInput from '@/components/FormInput.vue';
-    import { useRoute } from '@/composables/useRoute';
     import SiteLogo from "@/components/SiteLogo.vue";
+    import { useRoute } from '@/composables/useRoute';
 
     const route = useRoute();
     const page = usePage();
     const isLoggingOut = ref(false);
-    const isResumeAnalyzing = ref(false);
-    let resumeAnalyzeTimer: ReturnType<typeof setTimeout> | null = null;
     const authUser = computed(() => (page.props as { auth?: { user?: { name?: string } } }).auth?.user ?? null);
 
     type InterviewSettings = {
@@ -51,20 +49,36 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
         () => senioritySettings.value?.default_level ?? seniorityOptions.value[0]?.value ?? 'mid_level',
     );
 
-    const props = defineProps<{
+    type CvItemFromServer = {
+        id: number;
+        name: string;
+        size: number;
+        status: string;
+        is_active: boolean;
+        created_at: string | null;
+    };
+
+    const props = withDefaults(defineProps<{
         prefill: {
             name: string;
             job_role: string;
             interview_type: string;
             seniority_level: string;
         };
-    }>();
+        onboardingCvItems: CvItemFromServer[];
+    }>(), {
+        onboardingCvItems: () => [],
+    });
+
+    const resume = ref<File | null>(null);
+    const pendingPipelineCvId = ref<number | null>(null);
+    const isUploading = ref(false);
+    const uploadError = ref<string | null>(null);
 
     const form = useForm<{
         job_role: string;
         interview_type: string;
         seniority_level: string;
-        resume: File | null;
     }>({
         job_role: props.prefill.job_role ?? '',
         interview_type: (
@@ -77,40 +91,225 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                 ? props.prefill.seniority_level
                 : defaultSeniorityLevel.value
         ),
-        resume: null,
     });
+
+    type CvListItem = {
+        id: number;
+        name: string;
+        meta: string;
+        status: string;
+    };
+
+    function formatBytes(bytes: number): string {
+        if (bytes < 1024) {
+            return `${bytes} B`;
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${(bytes / 1024).toFixed(0)} KB`;
+        }
+
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatTimestamp(iso: string | null): string {
+        if (!iso) {
+            return 'Unknown date';
+        }
+
+        return new Date(iso).toLocaleString();
+    }
+
+    const latestCv = computed<CvListItem | null>(() => {
+        const item = props.onboardingCvItems[0];
+
+        if (!item) {
+            return null;
+        }
+
+        return {
+            id: Number(item.id),
+            name: String(item.name ?? 'Untitled'),
+            meta: `${formatBytes(Number(item.size ?? 0))} · ${formatTimestamp(item.created_at ?? null)}`,
+            status: String(item.status ?? 'uploaded'),
+        };
+    });
+
+    const latestParsedCv = computed<CvListItem | null>(() =>
+        latestCv.value?.status === 'parsed' ? latestCv.value : null,
+    );
+
+    const hasProcessingCv = computed(() =>
+        latestCv.value?.status === 'uploaded' || latestCv.value?.status === 'processing',
+    );
+
+    const showPipelinePanel = computed(() => resume.value !== null || pendingPipelineCvId.value !== null);
+
+    const pipelineDisplayName = computed(() => {
+        if (resume.value) {
+            return resume.value.name;
+        }
+
+        if (pendingPipelineCvId.value !== null && latestCv.value?.id === pendingPipelineCvId.value) {
+            return latestCv.value.name;
+        }
+
+        return '';
+    });
+
+    const isResumeAnalyzing = computed(() => {
+        if (isUploading.value) {
+            return true;
+        }
+
+        if (pendingPipelineCvId.value === null) {
+            return false;
+        }
+
+        if (!latestCv.value || latestCv.value.id !== pendingPipelineCvId.value) {
+            return true;
+        }
+
+        return latestCv.value.status === 'uploaded' || latestCv.value.status === 'processing';
+    });
+
+    const pipelineStatusLine = computed(() => {
+        if (isUploading.value) {
+            return 'Uploading...';
+        }
+
+        if (isResumeAnalyzing.value) {
+            return 'Analyzing your CV...';
+        }
+
+        return 'Ready';
+    });
+
+    watch(latestCv, (item) => {
+        const pendingId = pendingPipelineCvId.value;
+
+        if (pendingId === null || item === null || item.id !== pendingId) {
+            return;
+        }
+
+        if (item.status === 'parsed' || item.status === 'failed') {
+            pendingPipelineCvId.value = null;
+        }
+    });
+
+    const { start, stop } = usePoll(
+        2000,
+        {
+            only: ['onboardingCvItems'],
+        },
+        {
+            autoStart: false,
+        },
+    );
+
+    const shouldPoll = computed(() => hasProcessingCv.value || pendingPipelineCvId.value !== null);
+    watch(
+        shouldPoll,
+        (run) => {
+            if (run) {
+                start();
+            } else {
+                stop();
+            }
+        },
+        { immediate: true },
+    );
+
+    function reloadOnboardingCvItems(): Promise<void> {
+        return new Promise((resolve) => {
+            router.reload({
+                only: ['onboardingCvItems'],
+                onFinish: () => resolve(),
+            });
+        });
+    }
+
+    async function uploadResume(): Promise<void> {
+        if (!resume.value || isUploading.value) {
+            return;
+        }
+
+        isUploading.value = true;
+        uploadError.value = null;
+
+        try {
+            const formData = new FormData();
+            formData.append('resume', resume.value);
+
+            const response = await fetch(route('user.onboarding.cv.items.store'), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const errorMessage = payload?.errors?.resume?.[0] ?? payload?.message ?? 'Upload failed.';
+                uploadError.value = String(errorMessage);
+
+                return;
+            }
+
+            const item = payload?.item as { id?: number } | undefined;
+
+            if (item?.id !== undefined) {
+                pendingPipelineCvId.value = Number(item.id);
+            }
+
+            await reloadOnboardingCvItems();
+            resume.value = null;
+        } catch (error) {
+            uploadError.value = error instanceof Error ? error.message : 'Upload failed.';
+        } finally {
+            isUploading.value = false;
+        }
+    }
 
     const handleResumeChange = (event: Event): void => {
         const input = event.target as HTMLInputElement;
         const selectedFile = input.files?.[0] ?? null;
-        form.resume = selectedFile;
-
-        if (resumeAnalyzeTimer) {
-            clearTimeout(resumeAnalyzeTimer);
-            resumeAnalyzeTimer = null;
-        }
+        resume.value = selectedFile;
 
         if (!selectedFile) {
-            isResumeAnalyzing.value = false;
-
             return;
         }
 
-        isResumeAnalyzing.value = true;
-        resumeAnalyzeTimer = setTimeout(() => {
-            isResumeAnalyzing.value = false;
-            resumeAnalyzeTimer = null;
-        }, 1400);
+        void uploadResume().finally(() => {
+            input.value = '';
+        });
     };
 
     const clearResume = (): void => {
-        form.resume = null;
-        isResumeAnalyzing.value = false;
-        if (resumeAnalyzeTimer) {
-            clearTimeout(resumeAnalyzeTimer);
-            resumeAnalyzeTimer = null;
-        }
+        resume.value = null;
+        pendingPipelineCvId.value = null;
+        uploadError.value = null;
     };
+
+    function statusLabel(status: string): string {
+        if (status === 'parsed') {
+            return 'Parsed';
+        }
+
+        if (status === 'failed') {
+            return 'Failed';
+        }
+
+        if (status === 'processing' || status === 'uploaded') {
+            return 'Processing';
+        }
+
+        return 'Pending';
+    }
 
     const submit = (): void => {
         form.post(route('user.onboarding.update'), {
@@ -271,7 +470,7 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                             </div>
 
                             <div class="p-6 pt-0">
-                                <label v-if="!form.resume" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
+                                <label v-if="!showPipelinePanel" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
                                     <input type="file" class="hidden" accept=".pdf,.docx" @change="handleResumeChange" />
                                     <div class="h-12 w-12 rounded-full bg-accent border flex items-center justify-center mb-4">
                                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -300,14 +499,11 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                                         </div>
 
                                         <div class="min-w-0 flex-1">
-                                            <p
-                                                class="break-all sm:truncate font-medium text-foreground"
-                                                :title="`${(authUser?.name ?? 'user').toLowerCase().replaceAll(' ', '_')}_${form.resume.name}`"
-                                            >
-                                                {{ `${(authUser?.name ?? 'user').toLowerCase().replaceAll(' ', '_')}_${form.resume.name}` }}
+                                            <p class="break-all sm:truncate font-medium text-foreground" :title="pipelineDisplayName">
+                                                {{ pipelineDisplayName }}
                                             </p>
                                             <p class="truncate text-sm text-muted-foreground">
-                                                {{ isResumeAnalyzing ? 'Uploading and analyzing...' : 'Uploaded successfully • AI analyzed' }}
+                                                {{ pipelineStatusLine }}
                                             </p>
                                         </div>
                                     </div>
@@ -324,11 +520,31 @@ import {Head, router, useForm, usePage} from '@inertiajs/vue3';
                                     </div>
                                 </div>
 
-                                <p v-if="form.errors.resume" class="mt-2 text-xs text-destructive">
-                                    {{ form.errors.resume }}
+                                <p v-if="uploadError" class="mt-2 text-xs text-destructive">
+                                    {{ uploadError }}
                                 </p>
                             </div>
                         </div>
+
+                        <section class="mt-4" v-if="latestParsedCv">
+                            <div class="mb-2 px-1">
+                                <h2 class="text-sm font-semibold tracking-tight text-foreground">
+                                    Recently parsed CV
+                                </h2>
+                                <p class="mt-0.5 text-xs text-muted-foreground">
+                                    Only your latest CV is shown during onboarding.
+                                </p>
+                                <p v-if="hasProcessingCv" class="mt-1 text-xs text-muted-foreground animate-pulse">
+                                    Updating status...
+                                </p>
+                            </div>
+
+                            <div class="surface overflow-visible rounded-2xl shadow-xs border border-hairline px-4 py-3.5">
+                                <p class="truncate text-sm font-medium">{{ latestParsedCv.name }}</p>
+                                <p class="mt-0.5 text-[11px] text-muted-foreground">{{ latestParsedCv.meta }}</p>
+                                <p class="mt-1.5 text-[10px] font-medium text-success">{{ statusLabel(latestParsedCv.status) }}</p>
+                            </div>
+                        </section>
                     </div>
 
                     <div class="flex justify-end">

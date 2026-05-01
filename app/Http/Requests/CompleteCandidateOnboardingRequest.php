@@ -28,7 +28,6 @@ final class CompleteCandidateOnboardingRequest extends FormRequest
             'job_role' => ['required', 'string', 'max:200'],
             'interview_type' => ['required', 'string', "in:{$allowedTypes}", 'max:64'],
             'seniority_level' => ['required', 'string', "in:{$allowedLevels}", 'max:64'],
-            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
         ];
     }
 }

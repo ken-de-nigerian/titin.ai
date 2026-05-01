@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace App\DTOs\User;
 
-use Illuminate\Http\UploadedFile;
-
 final readonly class CompleteCandidateOnboardingData
 {
     public function __construct(
         public string $jobRole,
         public string $interviewType,
         public string $seniorityLevel,
-        public ?UploadedFile $resume,
     ) {}
 
     /**
-     * @param  array{job_role: string, interview_type: string, seniority_level: string, resume?: UploadedFile|null}  $validated
+     * @param  array{job_role: string, interview_type: string, seniority_level: string}  $validated
      */
     public static function fromValidated(array $validated): self
     {
@@ -24,7 +21,6 @@ final readonly class CompleteCandidateOnboardingData
             jobRole: $validated['job_role'],
             interviewType: $validated['interview_type'],
             seniorityLevel: $validated['seniority_level'],
-            resume: $validated['resume'] ?? null,
         );
     }
 }

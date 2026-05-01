@@ -15,6 +15,9 @@ interface UserCvRepositoryContract
     /** @return Collection<int, UserCv> */
     public function listForUser(User $user): Collection;
 
+    /** @return Collection<int, UserCv> */
+    public function listLatestForUser(User $user): Collection;
+
     public function createAsActive(User $user, UploadedFile $resume, string $path): UserCv;
 
     public function activate(User $user, UserCv $cv): UserCv;

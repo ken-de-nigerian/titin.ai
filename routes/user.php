@@ -28,6 +28,14 @@ Route::prefix('user')
             ->group(function () {
                 Route::get('/', 'show')->name('show');
                 Route::post('/', 'update')->name('update');
+
+                Route::prefix('cv')
+                    ->name('cv.')
+                    ->group(function () {
+                        Route::get('/items', [UserCvController::class, 'index'])->name('items.index');
+                        Route::post('/items', [UserCvController::class, 'store'])->name('items.store');
+                        Route::delete('/items/{cv}', [UserCvController::class, 'destroy'])->name('items.destroy');
+                    });
             });
 
         // Dashboard

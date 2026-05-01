@@ -24,6 +24,15 @@ final class EloquentUserCvRepository implements UserCvRepositoryContract
             ->get();
     }
 
+    public function listLatestForUser(User $user): Collection
+    {
+        return UserCv::query()
+            ->whereBelongsTo($user)
+            ->latest('id')
+            ->limit(1)
+            ->get();
+    }
+
     /**
      * @throws Throwable
      */
