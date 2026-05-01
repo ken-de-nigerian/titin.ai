@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -22,6 +23,8 @@ use Illuminate\Notifications\Notifiable;
  * @property mixed $profile_photo_path
  * @property mixed $email
  * @property mixed $resume_path
+ * @property mixed $name
+ * @property mixed $prefers_concise_feedback
  */
 #[Fillable([
     'name',
@@ -63,5 +66,10 @@ final class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new QueuedResetPasswordNotification($token));
+    }
+
+    public function cvs(): HasMany
+    {
+        return $this->hasMany(UserCv::class);
     }
 }

@@ -1,15 +1,34 @@
 <script setup lang="ts">
-    import {Head, usePage} from "@inertiajs/vue3";
-    import {CircleCheck, Download, Ellipsis, Star, Trash2} from "lucide-vue-next";
-    import {computed, onMounted, onUnmounted, ref} from "vue";
+    import { Head, usePage } from '@inertiajs/vue3';
+    import { CircleCheck, Download, Ellipsis, Star, Trash2 } from 'lucide-vue-next';
+    import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+    import { useRoute } from '@/composables/useRoute';
     import AppLayout from "@/layouts/AppLayout.vue";
 
+    const route = useRoute();
     const page = usePage();
-    const authUser = computed(() => (page.props as { auth?: { user?: { name?: string } } }).auth?.user ?? null);
+    const authUser = computed(() => (page.props as { auth?: { user?: { id?: number; name?: string } } }).auth?.user ?? null);
 
     const resume = ref<File | null>(null);
-    const isResumeAnalyzing = ref(false);
-    let resumeAnalyzeTimer: ReturnType<typeof setTimeout> | null = null;
+    /** CV id for the current upload pipeline; cleared when list shows parsed or failed. */
+    const pendingPipelineCvId = ref<number | null>(null);
+    const isUploading = ref(false);
+    const uploadError = ref<string | null>(null);
+    let cvStatusChannel: ReturnType<NonNullable<typeof window.Echo>['private']> | null = null;
+    const echoUserId = ref<number | null>(null);
+
+    type CvListItem = {
+        id: number;
+        name: string;
+        meta: string;
+        isActive: boolean;
+        status: string;
+    };
+
+    const uploadedCvs = ref<CvListItem[]>([]);
+    const hasProcessingCv = computed(() =>
+        uploadedCvs.value.some((item) => item.status === 'uploaded' || item.status === 'processing'),
+    );
 
     const resumeDisplayName = computed(() => {
         const file = resume.value;
@@ -23,56 +42,202 @@
         return `${slug}_${file.name}`;
     });
 
+    const showPipelinePanel = computed(
+        () => resume.value !== null || pendingPipelineCvId.value !== null,
+    );
+
+    const pipelineDisplayName = computed(() => {
+        if (resume.value) {
+            return resumeDisplayName.value;
+        }
+
+        if (pendingPipelineCvId.value !== null) {
+            const item = uploadedCvs.value.find((i) => i.id === pendingPipelineCvId.value);
+
+            return item?.name ?? 'Your CV';
+        }
+
+        return '';
+    });
+
+    const isResumeAnalyzing = computed(() => {
+        if (isUploading.value) {
+            return true;
+        }
+
+        if (pendingPipelineCvId.value === null) {
+            return false;
+        }
+
+        const item = uploadedCvs.value.find((i) => i.id === pendingPipelineCvId.value);
+
+        if (!item) {
+            return true;
+        }
+
+        return item.status === 'uploaded' || item.status === 'processing';
+    });
+
+    const pipelineStatusLine = computed(() => {
+        if (isUploading.value) {
+            return 'Uploading...';
+        }
+
+        if (isResumeAnalyzing.value) {
+            return 'Analyzing your CV...';
+        }
+
+        return 'Ready';
+    });
+
+    watch(
+        uploadedCvs,
+        (items) => {
+            const id = pendingPipelineCvId.value;
+
+            if (id === null) {
+                return;
+            }
+
+            const item = items.find((i) => i.id === id);
+
+            if (item && (item.status === 'parsed' || item.status === 'failed')) {
+                pendingPipelineCvId.value = null;
+            }
+        },
+        { deep: true },
+    );
+
+    function formatBytes(bytes: number): string {
+        if (bytes < 1024) {
+            return `${bytes} B`;
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${(bytes / 1024).toFixed(0)} KB`;
+        }
+
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatTimestamp(iso: string | null): string {
+        if (!iso) {
+            return 'Unknown date';
+        }
+
+        const date = new Date(iso);
+
+        return date.toLocaleString();
+    }
+
+    function statusLabel(status: string): string {
+        if (status === 'parsed') {
+            return 'Parsed';
+        }
+
+        if (status === 'failed') {
+            return 'Failed';
+        }
+
+        if (status === 'processing' || status === 'uploaded') {
+            return 'Processing';
+        }
+
+        return 'Pending';
+    }
+
+    async function fetchCvItems(): Promise<void> {
+        const response = await fetch(route('user.cv.items.index'), {
+            headers: {
+                Accept: 'application/json',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            throw new Error('Unable to load CV items.');
+        }
+
+        const payload = await response.json();
+        const items = Array.isArray(payload?.items) ? payload.items : [];
+        uploadedCvs.value = items.map((item: any) => ({
+            id: Number(item.id),
+            name: String(item.name ?? 'Untitled'),
+            meta: `${formatBytes(Number(item.size ?? 0))} · ${formatTimestamp(item.created_at ?? null)}`,
+            isActive: Boolean(item.is_active),
+            status: String(item.status ?? 'uploaded'),
+        }));
+    }
+
+    async function uploadResume(): Promise<void> {
+        if (!resume.value || isUploading.value) {
+            return;
+        }
+
+        isUploading.value = true;
+        uploadError.value = null;
+
+        try {
+            const formData = new FormData();
+            formData.append('resume', resume.value);
+
+            const response = await fetch(route('user.cv.items.store'), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const errorMessage = payload?.errors?.resume?.[0] ?? payload?.message ?? 'Upload failed.';
+
+                throw new Error(String(errorMessage));
+            }
+
+            const item = payload?.item as { id?: number } | undefined;
+
+            if (item?.id !== undefined) {
+                pendingPipelineCvId.value = Number(item.id);
+            }
+
+            await fetchCvItems();
+            resume.value = null;
+        } catch (error) {
+            uploadError.value = error instanceof Error ? error.message : 'Upload failed.';
+        } finally {
+            isUploading.value = false;
+        }
+    }
+
     const handleResumeChange = (event: Event): void => {
         const input = event.target as HTMLInputElement;
         const selectedFile = input.files?.[0] ?? null;
         resume.value = selectedFile;
 
-        if (resumeAnalyzeTimer) {
-            clearTimeout(resumeAnalyzeTimer);
-            resumeAnalyzeTimer = null;
-        }
-
         if (!selectedFile) {
-            isResumeAnalyzing.value = false;
-
             return;
         }
 
-        isResumeAnalyzing.value = true;
-        resumeAnalyzeTimer = setTimeout(() => {
-            isResumeAnalyzing.value = false;
-            resumeAnalyzeTimer = null;
-        }, 1400);
+        void uploadResume().finally(() => {
+            input.value = '';
+        });
     };
 
     const clearResume = (): void => {
         resume.value = null;
-        isResumeAnalyzing.value = false;
-
-        if (resumeAnalyzeTimer) {
-            clearTimeout(resumeAnalyzeTimer);
-            resumeAnalyzeTimer = null;
-        }
+        pendingPipelineCvId.value = null;
+        uploadError.value = null;
     };
-
-    type CvListItem = {
-        id: string;
-        name: string;
-        meta: string;
-        isActive: boolean;
-    };
-
-    const uploadedCvs = ref<CvListItem[]>([
-        {id: "1", name: "Alex_Morgan_Product_Manager_2026.pdf", meta: "412 KB · Today · 14:22", isActive: true},
-        {id: "2", name: "Alex_Morgan_Resume_v3.pdf", meta: "287 KB · Mar 18 · 09:10", isActive: false},
-        {id: "3", name: "Portfolio_one_pager.pdf", meta: "1.1 MB · Feb 02 · 18:44", isActive: false},
-    ]);
 
     const CV_MENU_WIDTH_PX = 176;
     const CV_MENU_EDGE_PAD_PX = 8;
 
-    const openMenuId = ref<string | null>(null);
+    const openMenuId = ref<number | null>(null);
     const openMenuHorizontal = ref<"left" | "right">("right");
 
     function horizontalPlacementForTrigger(trigger: HTMLElement): "left" | "right" {
@@ -102,7 +267,7 @@
         return vw - br.right > br.left ? "right" : "left";
     }
 
-    const toggleCvMenu = (id: string, event: MouseEvent): void => {
+    const toggleCvMenu = (id: number, event: MouseEvent): void => {
         if (openMenuId.value === id) {
             openMenuId.value = null;
 
@@ -122,11 +287,34 @@
         openMenuId.value = null;
     };
 
-    const setActiveCv = (id: string): void => {
-        uploadedCvs.value = uploadedCvs.value.map((row) => ({
-            ...row,
-            isActive: row.id === id,
-        }));
+    const setActiveCv = async (id: number): Promise<void> => {
+        await fetch(route('user.cv.items.activate', { cv: id }), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        await fetchCvItems();
+        closeCvMenu();
+    };
+
+    const removeCv = async (id: number): Promise<void> => {
+        await fetch(route('user.cv.items.destroy', { cv: id }), {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (id === pendingPipelineCvId.value) {
+            pendingPipelineCvId.value = null;
+        }
+
+        await fetchCvItems();
         closeCvMenu();
     };
 
@@ -140,10 +328,28 @@
 
     onMounted(() => {
         document.addEventListener("click", onDocumentPointerCloseMenus);
+        void fetchCvItems();
+
+        const uid = authUser.value?.id;
+
+        if (window.Echo && typeof uid === 'number') {
+            echoUserId.value = uid;
+            cvStatusChannel = window.Echo.private(`App.Models.User.${uid}`);
+            cvStatusChannel.listen('.cv.status.updated', () => {
+                void fetchCvItems();
+            });
+        }
+
     });
 
     onUnmounted(() => {
         document.removeEventListener("click", onDocumentPointerCloseMenus);
+
+        if (window.Echo && echoUserId.value !== null) {
+            window.Echo.leave(`private-App.Models.User.${echoUserId.value}`);
+            cvStatusChannel = null;
+            echoUserId.value = null;
+        }
     });
 </script>
 
@@ -167,7 +373,7 @@
                 </div>
 
                 <div class="p-6 pt-0">
-                    <label v-if="!resume" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
+                    <label v-if="!showPipelinePanel" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
                         <input type="file" class="hidden" accept=".pdf,.docx" @change="handleResumeChange" />
                         <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full border bg-accent">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -196,12 +402,12 @@
                             </div>
 
                             <div class="min-w-0 flex-1">
-                                <p class="break-all font-medium text-foreground sm:truncate" :title="resumeDisplayName">
-                                    {{ resumeDisplayName }}
+                                <p class="break-all font-medium text-foreground sm:truncate" :title="pipelineDisplayName">
+                                    {{ pipelineDisplayName }}
                                 </p>
 
                                 <p class="truncate text-sm text-muted-foreground">
-                                    {{ isResumeAnalyzing ? 'Uploading and analyzing...' : 'Uploaded successfully • AI analyzed' }}
+                                    {{ pipelineStatusLine }}
                                 </p>
                             </div>
                         </div>
@@ -217,6 +423,7 @@
                             </button>
                         </div>
                     </div>
+                    <p v-if="uploadError" class="mt-3 text-xs text-destructive">{{ uploadError }}</p>
                 </div>
             </div>
 
@@ -226,6 +433,9 @@
                         Uploaded ({{ uploadedCvs.length }})
                     </h2>
                     <p class="mt-0.5 text-xs text-muted-foreground">Active marked with ★</p>
+                    <p v-if="hasProcessingCv" class="mt-1 text-xs text-muted-foreground animate-pulse">
+                        Updating status...
+                    </p>
                 </div>
 
                 <ul class="surface divide-y divide-hairline overflow-visible rounded-2xl shadow-xs">
@@ -248,7 +458,7 @@
                                 <p class="mt-0.5 text-[11px] text-muted-foreground">{{ item.meta }}</p>
                                 <div class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-success">
                                     <CircleCheck class="h-3 w-3" aria-hidden="true" />
-                                    Parsed
+                                    {{ statusLabel(item.status) }}
                                 </div>
                             </div>
 
@@ -268,7 +478,7 @@
                                         Download
                                     </button>
 
-                                    <button type="button" role="menuitem" class="flex w-full items-center gap-2 border-t border-hairline px-3 py-2.5 text-left text-xs font-medium text-destructive transition hover:bg-surface-2" @click="closeCvMenu">
+                                    <button type="button" role="menuitem" class="flex w-full items-center gap-2 border-t border-hairline px-3 py-2.5 text-left text-xs font-medium text-destructive transition hover:bg-surface-2" @click="removeCv(item.id)">
                                         <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
                                         Remove
                                     </button>

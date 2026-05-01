@@ -9,9 +9,11 @@
 use App\Http\Controllers\User\CvAndResumeController;
 use App\Http\Controllers\User\DashboardController;
 use App\Http\Controllers\User\InterviewController;
+use App\Http\Controllers\User\InterviewTokenController;
 use App\Http\Controllers\User\OnboardingController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\SessionFeedbackController;
+use App\Http\Controllers\User\UserCvController;
 use App\Http\Middleware\EnsureCandidateOnboarded;
 
 Route::prefix('user')
@@ -47,9 +49,12 @@ Route::prefix('user')
             // Cv & Resumes
             Route::prefix('cv')
                 ->name('cv.')
-                ->controller(CvAndResumeController::class)
                 ->group(function () {
-                    Route::get('/', 'index')->name('index');
+                    Route::get('/', [CvAndResumeController::class, 'index'])->name('index');
+                    Route::get('/items', [UserCvController::class, 'index'])->name('items.index');
+                    Route::post('/items', [UserCvController::class, 'store'])->name('items.store');
+                    Route::post('/items/{cv}/activate', [UserCvController::class, 'activate'])->name('items.activate');
+                    Route::delete('/items/{cv}', [UserCvController::class, 'destroy'])->name('items.destroy');
                 });
 
             // Session Feedback
@@ -66,9 +71,11 @@ Route::prefix('user')
             // Interview Room
             Route::prefix('interview')
                 ->name('interview.')
-                ->controller(InterviewController::class)
                 ->group(function () {
-                    Route::get('/', 'index')->name('index');
+                    Route::get('/', [InterviewController::class, 'index'])->name('index');
+                    Route::post('/token', InterviewTokenController::class)
+                        ->middleware('throttle:30,1')
+                        ->name('token');
                 });
         });
     });

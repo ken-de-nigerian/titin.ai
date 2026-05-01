@@ -31,3 +31,5 @@ backend/.env
 backend/.venv
 frontend/.env
 auto_db.sqlite
+database/database.sqlite
+microservices/.env

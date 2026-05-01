@@ -37,34 +37,43 @@ export function toOrbState(lkState: AgentState | string | undefined): OrbState {
 export { useLiveKitRoom, useLocalParticipant, useMultibandTrackVolume, useVoiceAssistant };
 
 /**
- * Fetches a LiveKit token from the Python token server via the Vite proxy.
+ * Fetches a LiveKit token via the authenticated Laravel endpoint.
  */
 export async function fetchLiveKitToken(
-    name: string,
-    opts?: { job_role?: string; interview_type?: string; concise_feedback?: boolean },
+    opts?: { job_role?: string; interview_type?: string },
 ): Promise<string> {
-    const params = new URLSearchParams({ name });
+    const payload: Record<string, string> = {};
 
     if (opts?.job_role?.trim()) {
-        params.set('job_role', opts.job_role.trim());
+        payload.job_role = opts.job_role.trim();
     }
 
     if (opts?.interview_type?.trim()) {
-        params.set('interview_type', opts.interview_type.trim());
+        payload.interview_type = opts.interview_type.trim();
     }
 
-    if (typeof opts?.concise_feedback === 'boolean') {
-        params.set('concise_feedback', opts.concise_feedback ? '1' : '0');
-    }
-
-    const res = await fetch(`/api/getToken?${params.toString()}`);
-    const body = await res.text();
+    const res = await fetch('/user/interview/token', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(payload),
+    });
+    const body = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-        throw new Error(body || `Token request failed (${res.status})`);
+        const message = typeof body?.message === 'string' ? body.message : `Token request failed (${res.status})`;
+        throw new Error(message);
     }
 
-    return body;
+    if (typeof body?.token !== 'string' || body.token.trim() === '') {
+        throw new Error('Token response missing token.');
+    }
+
+    return body.token;
 }
 
 /**
@@ -78,14 +87,16 @@ export function useInterviewSession() {
     const connectError = ref<string | null>(null);
 
     async function connect(
-        name: string,
         opts?: { job_role?: string; interview_type?: string; concise_feedback?: boolean },
     ): Promise<void> {
         isConnecting.value = true;
         connectError.value = null;
 
         try {
-            token.value = await fetchLiveKitToken(name, opts);
+            token.value = await fetchLiveKitToken({
+                job_role: opts?.job_role,
+                interview_type: opts?.interview_type,
+            });
         } catch (e) {
             connectError.value = e instanceof Error ? e.message : String(e);
 

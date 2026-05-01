@@ -32,6 +32,7 @@ def build_system_prompt(config: dict) -> str:
     concise_feedback = bool(config.get("concise_feedback", DEFAULT_INTERVIEW_CONFIG["concise_feedback"]))
     question_count = config.get("question_count", DEFAULT_INTERVIEW_CONFIG["question_count"])
     candidate_name = str(config.get("candidate_name", "") or "").strip()
+    context_notes = str(config.get("context_notes", "") or "").strip()
     greeting_hint = ""
     if candidate_name:
         first = candidate_name.split()[0]
@@ -52,6 +53,14 @@ def build_system_prompt(config: dict) -> str:
         "- Give deeper coaching only when the candidate asks for detail or when an answer needs correction.\n"
     )
 
+    context_block = ""
+    if context_notes:
+        context_block = (
+            "\nCANDIDATE CONTEXT (from uploaded CV / profile data):\n"
+            f"{context_notes}\n"
+            "Use this context to personalize questions, but do not quote raw JSON or mention internal data sources.\n"
+        )
+
     return f"""You are a professional job interviewer conducting a paid mock interview session.
 
 Role being interviewed for: {job_role}
@@ -59,6 +68,7 @@ Interview type: {interview_type}
 Target number of questions to reach (including follow-ups where needed): {question_count}
 {greeting_hint}
 {interview_context}
+{context_block}
 
 SESSION QUALITY (users pay per session — be worth it):
 - Sound like a real hiring manager: clear, concise, natural; one thought at a time.

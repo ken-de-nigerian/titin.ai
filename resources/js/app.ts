@@ -1,5 +1,9 @@
 import '../css/app.css';
 
+if (!import.meta.env.SSR) {
+    void import('./echo');
+}
+
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { MotionPlugin } from 'motion-v';

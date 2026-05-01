@@ -57,7 +57,7 @@ import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
         isSubmitting.value = true;
 
         try {
-            await session.connect(trimmed, {
+            await session.connect({
                 job_role: jobRole.value,
                 interview_type: interviewType.value,
                 concise_feedback: Boolean(authUser.value?.prefers_concise_feedback),
