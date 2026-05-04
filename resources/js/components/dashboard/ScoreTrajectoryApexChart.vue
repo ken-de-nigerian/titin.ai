@@ -80,18 +80,45 @@
         },
         tooltip: {
             theme: 'light',
-            x: {
-                format: 'MMM d, yyyy · HH:mm',
-            },
-            y: {
-                formatter: (val: number | undefined) => (val !== undefined && val !== null ? Number(val).toFixed(1) : '—'),
+            /** Default datetime tooltips repeat the timestamp (title + series row). Custom = one clear block. */
+            custom: ({
+                series,
+                seriesIndex,
+                dataPointIndex,
+                w,
+            }: {
+                series: number[][];
+                seriesIndex: number;
+                dataPointIndex: number;
+                w: { globals: { seriesX: number[][] } };
+            }) => {
+                const yVal = series?.[seriesIndex]?.[dataPointIndex];
+                const xVal = w.globals.seriesX[seriesIndex]?.[dataPointIndex];
+
+                if (xVal === undefined) {
+                    return '';
+                }
+
+                const scoreText =
+                    yVal === undefined || yVal === null || Number.isNaN(Number(yVal)) ? '—' : Number(yVal).toFixed(1);
+                const when = new Intl.DateTimeFormat(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                }).format(new Date(xVal));
+
+                return `<div class="apexcharts-tooltip-custom px-3 py-2 text-xs leading-snug">
+                    <div><span class="font-semibold tabular-nums">${scoreText}</span><span class="text-slate-500"> / 10</span><span class="text-slate-400"> · </span><span class="text-slate-600">${when}</span></div>
+                </div>`;
             },
         },
     }));
 </script>
 
 <template>
-    <div v-if="clientReady" class="apex-chart-wrap -mx-1 mt-4 min-h-[220px] w-full">
+    <div v-if="clientReady" class="apex-chart-wrap -mx-1 mt-4 min-h-55 w-full">
         <VueApexCharts type="line" height="240" width="100%" :options="chartOptions" :series="series" />
     </div>
 </template>
