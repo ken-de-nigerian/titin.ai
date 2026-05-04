@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from datetime import timedelta
 import zipfile
 from io import BytesIO
 from xml.etree import ElementTree
@@ -421,6 +422,20 @@ def _raw_profile_excerpt_max_chars() -> int:
         return 12_000
 
 
+def _participant_access_token_ttl() -> timedelta:
+    """
+    LiveKit JWT validity for the browser participant.
+    Default 8h so long practice sessions are not cut off by short token TTLs.
+    """
+    raw = (os.getenv("LIVEKIT_PARTICIPANT_TOKEN_TTL_HOURS") or "").strip()
+    try:
+        hours = int(raw) if raw else 8
+    except ValueError:
+        hours = 8
+    hours = max(1, min(24, hours))
+    return timedelta(hours=hours)
+
+
 @app.route("/internal/issue-token", methods=["POST"])
 async def issue_token_internal():
     if not _is_authorized_internal_call():
@@ -443,6 +458,7 @@ async def issue_token_internal():
     email = str(payload.get("email") or "")
     concise_feedback = bool(payload.get("concise_feedback", False))
     question_count = int(payload.get("question_count") or 6)
+    planned_duration_seconds = int(payload.get("planned_duration_seconds") or (25 * 60))
     context_notes = str(payload.get("context_notes") or "")
     raw_prompt_context = payload.get("prompt_context")
     prompt_context = raw_prompt_context if isinstance(raw_prompt_context, dict) else {}
@@ -458,6 +474,7 @@ async def issue_token_internal():
             "job_role": job_role,
             "interview_type": interview_type,
             "question_count": question_count,
+            "planned_duration_seconds": planned_duration_seconds,
             "candidate_name": name,
             "concise_feedback": concise_feedback,
             "context_notes": context_notes,
@@ -470,6 +487,7 @@ async def issue_token_internal():
         .with_identity(identity)
         .with_name(name)
         .with_metadata(participant_meta)
+        .with_ttl(_participant_access_token_ttl())
         .with_grants(
             api.VideoGrants(
                 room_join=True,

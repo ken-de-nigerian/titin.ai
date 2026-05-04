@@ -8,7 +8,6 @@ use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('Landing'))->name('home');
 Route::get('/internal/users/{user}/interview-context', InterviewContextController::class);
-Route::get('/internal/interview-context/{user}', InterviewContextController::class);
 Route::post('/internal/cv/parsed', CvParseCallbackController::class)->name('internal.cv.parsed');
 Route::get('/internal/cv/files/{cv}', CvFileDownloadController::class)
     ->middleware('signed')

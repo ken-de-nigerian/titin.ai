@@ -5,6 +5,7 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
     import FormInput from '@/components/FormInput.vue';
     import SiteLogo from "@/components/SiteLogo.vue";
     import { useRoute } from '@/composables/useRoute';
+    import { interviewTypeOptionValuesEqual } from '@/utils/interviewType';
 
     const route = useRoute();
     const page = usePage();
@@ -73,7 +74,12 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
     const resume = ref<File | null>(null);
     const pendingPipelineCvId = ref<number | null>(null);
     const isUploading = ref(false);
+    const isRemovingCv = ref(false);
     const uploadError = ref<string | null>(null);
+
+    function readCsrfToken(): string {
+        return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+    }
 
     const form = useForm<{
         job_role: string;
@@ -81,11 +87,13 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
         seniority_level: string;
     }>({
         job_role: props.prefill.job_role ?? '',
-        interview_type: (
-            interviewTypeOptions.value.some((option) => option.value === props.prefill.interview_type)
-                ? props.prefill.interview_type
-                : defaultInterviewType.value
-        ),
+        interview_type: (() => {
+            const match = interviewTypeOptions.value.find((option) =>
+                interviewTypeOptionValuesEqual(option.value, props.prefill.interview_type),
+            );
+
+            return match?.value ?? defaultInterviewType.value;
+        })(),
         seniority_level: (
             seniorityOptions.value.some((option) => option.value === props.prefill.seniority_level)
                 ? props.prefill.seniority_level
@@ -135,26 +143,53 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
         };
     });
 
-    const latestParsedCv = computed<CvListItem | null>(() =>
-        latestCv.value?.status === 'parsed' ? latestCv.value : null,
-    );
-
     const hasProcessingCv = computed(() =>
         latestCv.value?.status === 'uploaded' || latestCv.value?.status === 'processing',
     );
 
-    const showPipelinePanel = computed(() => resume.value !== null || pendingPipelineCvId.value !== null);
+    /** Show uploaded / in-progress CV; choosing a file again replaces server-side (“latest”). */
+    const showCvStatusCard = computed(
+        () => resume.value !== null || pendingPipelineCvId.value !== null || latestCv.value !== null,
+    );
+
+    function statusLabel(status: string): string {
+        if (status === 'parsed') {
+            return 'Parsed';
+        }
+
+        if (status === 'failed') {
+            return 'Failed';
+        }
+
+        if (status === 'processing' || status === 'uploaded') {
+            return 'Processing';
+        }
+
+        return 'Pending';
+    }
 
     const pipelineDisplayName = computed(() => {
         if (resume.value) {
             return resume.value.name;
         }
 
-        if (pendingPipelineCvId.value !== null && latestCv.value?.id === pendingPipelineCvId.value) {
+        if (latestCv.value !== null) {
             return latestCv.value.name;
         }
 
+        if (pendingPipelineCvId.value !== null) {
+            return 'Your CV';
+        }
+
         return '';
+    });
+
+    const pipelineMetaLine = computed(() => {
+        if (latestCv.value === null || resume.value !== null || isUploading.value) {
+            return null;
+        }
+
+        return latestCv.value.meta;
     });
 
     const isResumeAnalyzing = computed(() => {
@@ -162,27 +197,37 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
             return true;
         }
 
-        if (pendingPipelineCvId.value === null) {
-            return false;
+        if (pendingPipelineCvId.value !== null) {
+            if (!latestCv.value || latestCv.value.id !== pendingPipelineCvId.value) {
+                return true;
+            }
+
+            return latestCv.value.status === 'uploaded' || latestCv.value.status === 'processing';
         }
 
-        if (!latestCv.value || latestCv.value.id !== pendingPipelineCvId.value) {
-            return true;
+        if (latestCv.value === null) {
+            return false;
         }
 
         return latestCv.value.status === 'uploaded' || latestCv.value.status === 'processing';
     });
 
+    const showCvActionButtons = computed(() => !isResumeAnalyzing.value);
+
     const pipelineStatusLine = computed(() => {
         if (isUploading.value) {
-            return 'Uploading...';
+            return 'Uploading…';
         }
 
         if (isResumeAnalyzing.value) {
-            return 'Analyzing your CV...';
+            return 'Analyzing your CV…';
         }
 
-        return 'Ready';
+        if (latestCv.value !== null) {
+            return statusLabel(latestCv.value.status);
+        }
+
+        return '';
     });
 
     watch(latestCv, (item) => {
@@ -247,6 +292,7 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': readCsrfToken(),
                 },
                 body: formData,
             });
@@ -295,20 +341,51 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
         uploadError.value = null;
     };
 
-    function statusLabel(status: string): string {
-        if (status === 'parsed') {
-            return 'Parsed';
+    async function removeUploadedCv(): Promise<void> {
+        if (isRemovingCv.value || isUploading.value) {
+            return;
         }
 
-        if (status === 'failed') {
-            return 'Failed';
+        uploadError.value = null;
+
+        const cv = latestCv.value;
+
+        if (cv === null) {
+            clearResume();
+
+            return;
         }
 
-        if (status === 'processing' || status === 'uploaded') {
-            return 'Processing';
-        }
+        isRemovingCv.value = true;
 
-        return 'Pending';
+        try {
+            const response = await fetch(route('user.onboarding.cv.items.destroy', cv.id), {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': readCsrfToken(),
+                },
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const errorMessage = payload?.message ?? 'Could not remove your CV.';
+
+                uploadError.value = String(errorMessage);
+
+                return;
+            }
+
+            clearResume();
+            await reloadOnboardingCvItems();
+        } catch (error) {
+            uploadError.value = error instanceof Error ? error.message : 'Could not remove your CV.';
+        } finally {
+            isRemovingCv.value = false;
+        }
     }
 
     const submit = (): void => {
@@ -466,11 +543,13 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
                                     </svg>
                                     CV / Resume (optional)
                                 </h3>
-                                <p class="text-sm text-muted-foreground">Upload your CV for personalized interview questions</p>
+                                <p class="text-sm text-muted-foreground">
+                                    Upload your CV to help us tailor this session to your background.
+                                </p>
                             </div>
 
                             <div class="p-6 pt-0">
-                                <label v-if="!showPipelinePanel" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
+                                <label v-if="!showCvStatusCard" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-hairline bg-surface p-8 transition-all hover:border-brand/40 hover:bg-brand-soft/40">
                                     <input type="file" class="hidden" accept=".pdf,.docx" @change="handleResumeChange" />
                                     <div class="h-12 w-12 rounded-full bg-accent border flex items-center justify-center mb-4">
                                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -505,46 +584,39 @@ import { Head, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
                                             <p class="truncate text-sm text-muted-foreground">
                                                 {{ pipelineStatusLine }}
                                             </p>
+                                            <p v-if="pipelineMetaLine" class="mt-0.5 truncate text-xs text-muted-foreground">
+                                                {{ pipelineMetaLine }}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div class="flex w-full shrink-0 items-center gap-2 sm:w-auto">
-                                        <label class="inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border border-hairline bg-surface px-4 text-xs font-semibold text-foreground ring-offset-background transition-all duration-200 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:flex-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0">
-                                            Replace
-                                            <input type="file" class="hidden" accept=".pdf,.docx" @change="handleResumeChange" />
+                                    <div v-if="showCvActionButtons" class="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+                                        <label class="inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border border-hairline bg-surface px-4 text-xs font-semibold text-foreground ring-offset-background transition-all duration-200 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:flex-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0" :class="{ 'pointer-events-none opacity-50': isRemovingCv }">
+                                            Upload another CV
+                                            <input type="file" class="hidden" accept=".pdf,.docx" :disabled="isRemovingCv" @change="handleResumeChange" />
                                         </label>
 
-                                        <button type="button" class="inline-flex h-9 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-destructive/30 bg-surface px-4 text-xs font-semibold text-destructive ring-offset-background transition-all duration-200 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:flex-none" @click="clearResume">
-                                            Remove
-                                        </button>
+                                        <ActionButton
+                                            v-if="latestCv"
+                                            type="button"
+                                            :show-trailing-icon="false"
+                                            :processing="isRemovingCv"
+                                            processing-label="Removing…"
+                                            class="mt-0! inline-flex! h-9! min-h-9! w-auto! flex-1! shrink-0! items-center! justify-center! gap-2! whitespace-nowrap! rounded-md! border! border-destructive/30! bg-surface! px-4! py-0! text-xs! font-semibold! text-destructive! shadow-none! ring-offset-background! transition-all! duration-200! hover:bg-destructive/10! hover:text-destructive! focus-visible:outline-none! focus-visible:ring-2! focus-visible:ring-ring! focus-visible:ring-offset-2! sm:flex-none!"
+                                            @click="removeUploadedCv">
+                                            Remove CV
+                                        </ActionButton>
                                     </div>
                                 </div>
 
                                 <p v-if="uploadError" class="mt-2 text-xs text-destructive">
                                     {{ uploadError }}
                                 </p>
+                                <p v-if="hasProcessingCv" class="mt-2 text-xs text-muted-foreground animate-pulse">
+                                    Updating status…
+                                </p>
                             </div>
                         </div>
-
-                        <section class="mt-4" v-if="latestParsedCv">
-                            <div class="mb-2 px-1">
-                                <h2 class="text-sm font-semibold tracking-tight text-foreground">
-                                    Recently parsed CV
-                                </h2>
-                                <p class="mt-0.5 text-xs text-muted-foreground">
-                                    Only your latest CV is shown during onboarding.
-                                </p>
-                                <p v-if="hasProcessingCv" class="mt-1 text-xs text-muted-foreground animate-pulse">
-                                    Updating status...
-                                </p>
-                            </div>
-
-                            <div class="surface overflow-visible rounded-2xl shadow-xs border border-hairline px-4 py-3.5">
-                                <p class="truncate text-sm font-medium">{{ latestParsedCv.name }}</p>
-                                <p class="mt-0.5 text-[11px] text-muted-foreground">{{ latestParsedCv.meta }}</p>
-                                <p class="mt-1.5 text-[10px] font-medium text-success">{{ statusLabel(latestParsedCv.status) }}</p>
-                            </div>
-                        </section>
                     </div>
 
                     <div class="flex justify-end">

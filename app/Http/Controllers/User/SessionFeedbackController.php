@@ -26,9 +26,10 @@ final class SessionFeedbackController extends Controller
         $user = $request->user();
         $latest = $user === null ? null : $this->interviewSessions->latestCompletedSession($user);
 
-        return Inertia::render('User/Interview/Feedback', [
+        return Inertia::render('User/Interview/Sessions', [
             'feedback' => is_array($latest?->feedback_json) ? $latest->feedback_json : null,
             'sessionId' => $latest?->id,
+            'sessionMeta' => $this->feedbackPageSessionMeta($latest),
         ]);
     }
 
@@ -42,6 +43,7 @@ final class SessionFeedbackController extends Controller
         return Inertia::render('User/Interview/Feedback', [
             'feedback' => is_array($session->feedback_json) ? $session->feedback_json : null,
             'sessionId' => $session->id,
+            'sessionMeta' => $this->feedbackPageSessionMeta($session),
         ]);
     }
 
@@ -84,5 +86,23 @@ final class SessionFeedbackController extends Controller
         );
 
         return redirect()->route('user.feedback.show', ['session' => $updated->id]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function feedbackPageSessionMeta(?InterviewSession $session): ?array
+    {
+        if ($session === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $session->id,
+            'job_role' => $session->job_role,
+            'interview_type' => $session->interview_type,
+            'interview_mode' => $session->interview_mode,
+            'duration_seconds' => $session->duration_seconds,
+        ];
     }
 }

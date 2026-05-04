@@ -57,7 +57,7 @@
                                 </span>
                             </a>
 
-                            <a class="flex items-start gap-4 rounded-xl px-4 py-3.5 text-base transition bg-surface-2 font-medium text-foreground" href="/dashboard">
+                            <SidebarNavMenuFlatItem :href="route('user.feedback.index')">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
                                     <path d="M12 19C15.31 19 18 16.31 18 13V8C18 4.69 15.31 2 12 2C8.69 2 6 4.69 6 8V13C6 16.31 8.69 19 12 19Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
                                     <path d="M3 11V13C3 17.97 7.03 22 12 22C16.97 22 21 17.97 21 13V11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -68,7 +68,7 @@
                                     <span class="block">Sessions</span>
                                     <span class="mt-1 block text-xs font-normal text-muted-foreground">Your interview practice history</span>
                                 </span>
-                            </a>
+                            </SidebarNavMenuFlatItem>
 
                             <SidebarNavMenuFlatItem :href="route('user.profile.settings')">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">

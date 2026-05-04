@@ -26,8 +26,8 @@ final class CompleteCandidateOnboardingRequest extends FormRequest
 
         return [
             'job_role' => ['required', 'string', 'max:200'],
-            'interview_type' => ['required', 'string', "in:{$allowedTypes}", 'max:64'],
-            'seniority_level' => ['required', 'string', "in:{$allowedLevels}", 'max:64'],
+            'interview_type' => ['required', 'string', "in:$allowedTypes", 'max:64'],
+            'seniority_level' => ['required', 'string', "in:$allowedLevels", 'max:64'],
         ];
     }
 }

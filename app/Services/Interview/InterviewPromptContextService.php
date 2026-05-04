@@ -15,7 +15,7 @@ final class InterviewPromptContextService
     /**
      * @return array{
      *   schema_version: string,
-     *   session: array{question_count: int, concise_feedback: bool},
+     *   session: array{question_count: int, concise_feedback: bool, planned_duration_seconds: int},
      *   candidate: array{user_id: int, name: string, job_role: string, seniority_level: string},
      *   interview: array{mode: string, mode_label: string, type: string, type_label: string, type_context: string},
      *   cv: array{has_uploaded_cv: bool, has_parsed_profile: bool, skills: array<int, string>, summary: string},
@@ -39,9 +39,32 @@ final class InterviewPromptContextService
             $resolvedType = $defaultType;
         }
 
+        $minDuration = (int) config('settings.interview.min_duration_minutes', 5);
+        $maxDuration = (int) config('settings.interview.max_duration_minutes', 120);
+        $defaultDurationMinutes = (int) config('settings.interview.default_duration_minutes', 25);
+        $defaultDurationMinutes = max($minDuration, min($maxDuration, $defaultDurationMinutes));
+
+        $durationMinutes = $data?->durationMinutes ?? $user->interview_duration_minutes ?? $defaultDurationMinutes;
+        $durationMinutes = max($minDuration, min($maxDuration, (int) $durationMinutes));
+        $plannedDurationSeconds = $durationMinutes * 60;
+
         $defaultQuestionCount = (int) config('settings.interview.default_question_count', 6);
-        $questionCount = $data?->questionCount ?? $defaultQuestionCount;
-        $questionCount = max(3, min(20, $questionCount));
+
+        $minPrimaryQuestions = max(3, min(50, (int) config('settings.interview.primary_question_count_min', 4)));
+        $maxConfigured = min(50, (int) config('settings.interview.primary_question_count_max', 20));
+        $maxPrimaryQuestions = max($minPrimaryQuestions, $maxConfigured);
+        $minutesPerPrimaryQuestion = max(1.0, (float) config('settings.interview.minutes_per_primary_question', 2.5));
+        $derivedFromDuration = (int) ceil($durationMinutes / $minutesPerPrimaryQuestion);
+        $derivedFromDuration = max($minPrimaryQuestions, min($maxPrimaryQuestions, $derivedFromDuration));
+
+        if ($data?->questionCount !== null) {
+            $questionCount = max(3, min($maxPrimaryQuestions, (int) $data->questionCount));
+        } else {
+            $questionCount = $derivedFromDuration > 0 ? $derivedFromDuration : max(
+                3,
+                min(20, $defaultQuestionCount),
+            );
+        }
 
         $jobRole = trim((string) ($data?->jobRole ?? $user->job_role ?? 'Software Engineer'));
         if ($jobRole === '') {
@@ -101,6 +124,7 @@ final class InterviewPromptContextService
             'schema_version' => 'prompt_context.v1',
             'session' => [
                 'question_count' => $questionCount,
+                'planned_duration_seconds' => $plannedDurationSeconds,
                 'concise_feedback' => (bool) $user->prefers_concise_feedback,
             ],
             'candidate' => [

@@ -60,6 +60,7 @@ final class HandleInertiaRequests extends Middleware
                     'interview_type' => $request->user()->interview_type,
                     'seniority_level' => $request->user()->seniority_level,
                     'prefers_concise_feedback' => (bool) $request->user()->prefers_concise_feedback,
+                    'interview_duration_minutes' => $request->user()->interview_duration_minutes,
                     'profile_photo_url' => $request->user()->profile_photo_path
                         ? Storage::disk('public')->url($request->user()->profile_photo_path)
                         : null,
@@ -73,11 +74,30 @@ final class HandleInertiaRequests extends Middleware
             'settings' => [
                 'interview' => [
                     'default_type' => (string) config('settings.interview.default_type', 'mixed'),
+                    'default_mode' => (string) config('settings.interview.default_mode', 'simulation'),
+                    'default_question_count' => (int) config('settings.interview.default_question_count', 6),
+                    'minutes_per_primary_question' => (float) config('settings.interview.minutes_per_primary_question', 2.5),
+                    'primary_question_count_min' => (int) config('settings.interview.primary_question_count_min', 4),
+                    'primary_question_count_max' => (int) config('settings.interview.primary_question_count_max', 20),
+                    'default_duration_minutes' => (int) config('settings.interview.default_duration_minutes', 25),
+                    'min_duration_minutes' => (int) config('settings.interview.min_duration_minutes', 5),
+                    'max_duration_minutes' => (int) config('settings.interview.max_duration_minutes', 120),
+                    'duration_presets' => array_values(array_map('intval', (array) config('settings.interview.duration_presets', []))),
                     'types' => config('settings.interview.types', []),
+                    'modes' => config('settings.interview.modes', []),
                 ],
                 'seniority' => [
                     'default_level' => (string) config('settings.seniority.default_level', 'mid_level'),
                     'levels' => config('settings.seniority.levels', []),
+                ],
+                'feedback' => [
+                    'score_tier_weak_below' => (float) config('settings.feedback.score_tier_weak_below', 5),
+                    'score_tier_strong_from' => (float) config('settings.feedback.score_tier_strong_from', 7),
+                    'score_tier_labels' => [
+                        'weak' => (string) config('settings.feedback.score_tier_labels.weak', 'Needs focus'),
+                        'mid' => (string) config('settings.feedback.score_tier_labels.mid', 'Mixed signal'),
+                        'strong' => (string) config('settings.feedback.score_tier_labels.strong', 'Strong signal'),
+                    ],
                 ],
             ],
         ];

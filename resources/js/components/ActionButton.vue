@@ -17,6 +17,14 @@
             type: Boolean,
             default: false,
         },
+        showTrailingIcon: {
+            type: Boolean,
+            default: true,
+        },
+        processingLabel: {
+            type: String,
+            default: 'Loading',
+        },
     });
 
     const attrs = useAttrs();
@@ -70,13 +78,16 @@
     <button v-bind="passthroughAttrs" :disabled="processing || disabled" :class="mergedClass">
         <span v-if="!processing" class="flex items-center justify-center gap-2">
             <slot>Submit</slot>
-            <ArrowRight class="h-4 w-4 transition group-hover:translate-x-0.5" />
+            <ArrowRight
+                v-if="showTrailingIcon"
+                class="h-4 w-4 transition group-hover:translate-x-0.5"
+            />
         </span>
         <span v-else class="flex items-center justify-center gap-2">
             <svg stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" viewBox="0 0 16 16" class="spinner animate-spin" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="height: 18px; width: 18px;">
                 <path d="M8 0c-4.355 0-7.898 3.481-7.998 7.812 0.092-3.779 2.966-6.812 6.498-6.812 3.59 0 6.5 3.134 6.5 7 0 0.828 0.672 1.5 1.5 1.5s1.5-0.672 1.5-1.5c0-4.418-3.582-8-8-8zM8 16c4.355 0 7.898-3.481 7.998-7.812-0.092 3.779-2.966 6.812-6.498 6.812-3.59 0-6.5-3.134-6.5-7 0-0.828-0.672-1.5-1.5-1.5s-1.5 0.672-1.5 1.5c0 4.418 3.582 8 8 8z"></path>
             </svg>
-            Loading
+            {{ processingLabel }}
         </span>
     </button>
 </template>

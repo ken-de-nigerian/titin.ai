@@ -46,7 +46,6 @@ return [
     ],
 
     'livekit' => [
-        'url' => env('VITE_LIVEKIT_URL'),
         'token_server_url' => env('LIVEKIT_TOKEN_SERVER_URL', env('VITE_TOKEN_SERVER_URL', 'http://localhost:5001')),
         'internal_secret' => env('LIVEKIT_INTERNAL_TOKEN_SECRET'),
         'python_accessible_app_url' => env('PYTHON_ACCESSIBLE_APP_URL'),

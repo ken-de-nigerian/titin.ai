@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('interview_mode', 32)->nullable();
             $table->string('interview_type', 64)->nullable();
             $table->unsignedTinyInteger('question_count')->default(6);
+            $table->unsignedInteger('planned_duration_seconds')->nullable();
             $table->unsignedInteger('duration_seconds')->default(0);
             $table->json('messages_json')->nullable();
             $table->json('feedback_json')->nullable();

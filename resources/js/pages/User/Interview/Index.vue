@@ -2,6 +2,7 @@
     import { LiveKitRoom, RoomAudioRenderer } from '@blockgain/livekit-vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import type { RoomOptions } from 'livekit-client';
+    import { DisconnectReason } from 'livekit-client';
     import { computed, ref, watch } from 'vue';
 
     import ActionButton from '@/components/ActionButton.vue';
@@ -10,6 +11,8 @@
     import { useInterviewSession } from '@/composables/useLiveKit';
     import { useRoute } from '@/composables/useRoute';
     import type { SessionEndPayload } from '@/types/sessionFeedback';
+    import { derivePrimaryQuestionCountFromDuration } from '@/utils/interviewPlanning';
+    import { interviewTypeOptionValuesEqual, resolveInterviewTypeLabel } from '@/utils/interviewType';
 
     const liveKitRoomOptions: RoomOptions = {
         adaptiveStream: true,
@@ -34,25 +37,41 @@
         default_type?: string;
         types?: Record<string, string>;
         default_question_count?: number;
+        minutes_per_primary_question?: number;
+        primary_question_count_min?: number;
+        primary_question_count_max?: number;
         default_mode?: string;
         modes?: Record<string, string>;
+        default_duration_minutes?: number;
+        min_duration_minutes?: number;
+        max_duration_minutes?: number;
+        duration_presets?: number[];
     });
+
     const interviewTypeOptions = computed(() =>
         Object.entries(interviewSettings.value.types ?? {}).map(([value, label]) => ({ value, label })),
     );
     const fallbackInterviewType = computed(
         () => interviewSettings.value.default_type ?? interviewTypeOptions.value[0]?.value ?? 'mixed',
     );
-    const interviewType = ref<string>(
-        interviewTypeOptions.value.some((option) => option.value === authUser.value?.interview_type)
-            ? String(authUser.value?.interview_type)
-            : fallbackInterviewType.value,
-    );
-    const interviewTypeLabel = computed(() => {
-        const found = interviewTypeOptions.value.find((option) => option.value === interviewType.value);
+    const interviewType = ref<string>(fallbackInterviewType.value);
 
-        return found?.label ?? interviewType.value.replaceAll('_', ' ');
-    });
+    watch(
+        () =>
+            `${String(authUser.value?.interview_type ?? '')}|${interviewTypeOptions.value.map((o) => o.value).join(',')}`,
+        () => {
+            const raw = authUser.value?.interview_type;
+            const match = interviewTypeOptions.value.find((option) =>
+                interviewTypeOptionValuesEqual(option.value, String(raw ?? '')),
+            );
+            interviewType.value = match?.value ?? fallbackInterviewType.value;
+        },
+        { immediate: true },
+    );
+
+    const interviewTypeLabel = computed(() =>
+        resolveInterviewTypeLabel(interviewType.value, interviewSettings.value.types),
+    );
     const interviewModeOptions = computed(() =>
         Object.entries(interviewSettings.value.modes ?? {}).map(([value, label]) => ({ value, label })),
     );
@@ -64,31 +83,118 @@
             ? String(authUser.value?.interview_mode)
             : fallbackInterviewMode.value,
     );
-    const questionCount = computed(() =>
-        Math.min(
-            20,
-            Math.max(
-                3,
-                Number.isFinite(Number(interviewSettings.value.default_question_count))
-                    ? Number(interviewSettings.value.default_question_count)
-                    : 6,
-            ),
+    const effectiveDurationMinutes = computed(() => {
+        const raw = authUser.value?.interview_duration_minutes;
+        const minM = Number(interviewSettings.value.min_duration_minutes) || 5;
+        const maxM = Number(interviewSettings.value.max_duration_minutes) || 120;
+
+        if (raw !== null && raw !== undefined && Number.isFinite(Number(raw))) {
+            return Math.min(maxM, Math.max(minM, Math.round(Number(raw))));
+        }
+
+        const def = Number(interviewSettings.value.default_duration_minutes);
+
+        return Number.isFinite(def) ? Math.min(maxM, Math.max(minM, def)) : 25;
+    });
+
+    const interviewPlanningConfig = computed(() => ({
+        minutes_per_primary_question:
+            Number.isFinite(Number(interviewSettings.value.minutes_per_primary_question))
+            && Number(interviewSettings.value.minutes_per_primary_question) > 0
+                ? Number(interviewSettings.value.minutes_per_primary_question)
+                : 2.5,
+        primary_question_count_min:
+            Number.isFinite(Number(interviewSettings.value.primary_question_count_min))
+                ? Number(interviewSettings.value.primary_question_count_min)
+                : 4,
+        primary_question_count_max:
+            Number.isFinite(Number(interviewSettings.value.primary_question_count_max))
+                ? Number(interviewSettings.value.primary_question_count_max)
+                : 20,
+        default_question_count:
+            Number.isFinite(Number(interviewSettings.value.default_question_count))
+                ? Number(interviewSettings.value.default_question_count)
+                : 6,
+    }));
+
+    const derivedQuestionCountForUi = computed(() =>
+        derivePrimaryQuestionCountFromDuration(
+            effectiveDurationMinutes.value,
+            interviewPlanningConfig.value,
         ),
     );
+
     const showConnectModal = ref(true);
     const isSubmitting = ref(false);
     const isRetryingJoin = ref(false);
+    const isEndingSession = ref(false);
+    const interviewDropHint = ref<string | null>(null);
+
+    const slowJoinTokenRefreshConsumed = ref(false);
+
+    function disconnectNoticeForCode(code: number | null): string {
+        if (code === DisconnectReason.DUPLICATE_IDENTITY) {
+            return 'This interview was opened in another tab or window. Close the other session, then start again here.';
+        }
+
+        if (code === DisconnectReason.JOIN_FAILURE) {
+            return 'Could not join the interview room (join rejected). Please try again, or return to the dashboard and start a new session.';
+        }
+
+        if (code === DisconnectReason.CONNECTION_TIMEOUT) {
+            return 'The connection timed out. Check your network, then try starting the interview again.';
+        }
+
+        if (code === DisconnectReason.MEDIA_FAILURE) {
+            return 'Audio failed in the browser (often a device or browser permission issue). Check your microphone permission, then try again.';
+        }
+
+        if (code === DisconnectReason.SIGNAL_CLOSE || code === DisconnectReason.SERVER_SHUTDOWN) {
+            return 'The realtime service closed the connection. Please try again in a moment.';
+        }
+
+        if (code === DisconnectReason.ROOM_DELETED || code === DisconnectReason.ROOM_CLOSED) {
+            return 'The interview room ended unexpectedly. You can start a new session below.';
+        }
+
+        if (code === DisconnectReason.PARTICIPANT_REMOVED) {
+            return 'You were removed from the interview room. Start a new session below if you still want to practice.';
+        }
+
+        if (code === DisconnectReason.AGENT_ERROR) {
+            return 'The AI interviewer encountered an error. Please try again; if it keeps happening, try again later.';
+        }
+
+        return 'The interview connection dropped. You can safely start again below — your previous attempt will not block a new session.';
+    }
+
+    function handleInterviewConnectionLost(payload: { reasonCode: number | null }): void {
+        if (isEndingSession.value) {
+            return;
+        }
+
+        interviewDropHint.value = disconnectNoticeForCode(payload.reasonCode);
+        session.disconnect();
+        showConnectModal.value = true;
+    }
     const sessionMeta = computed(() => ({
         job_role: jobRole.value.trim() || 'Interview practice',
         interview_type: interviewType.value,
-        question_count: questionCount.value,
+        question_count:
+            session.questionCount.value !== null && Number.isFinite(session.questionCount.value)
+                ? session.questionCount.value
+                : derivedQuestionCountForUi.value,
+        planned_duration_seconds:
+            session.plannedDurationSeconds.value !== null && Number.isFinite(session.plannedDurationSeconds.value)
+                ? session.plannedDurationSeconds.value
+                : Math.round(effectiveDurationMinutes.value * 60),
     }));
     const connectOptions = computed(() => ({
         job_role: jobRole.value,
         interview_type: interviewType.value,
-        question_count: questionCount.value,
         interview_mode: interviewMode.value,
         concise_feedback: Boolean(authUser.value?.prefers_concise_feedback),
+        duration_minutes: effectiveDurationMinutes.value,
     }));
 
     async function handleConnect() {
@@ -97,6 +203,7 @@
         }
 
         isSubmitting.value = true;
+        interviewDropHint.value = null;
 
         try {
             await session.connect(connectOptions.value);
@@ -109,11 +216,17 @@
     }
 
     async function handleRetryJoin(): Promise<void> {
+        if (slowJoinTokenRefreshConsumed.value) {
+            return;
+        }
+
         if (isRetryingJoin.value || isSubmitting.value) {
             return;
         }
 
+        slowJoinTokenRefreshConsumed.value = true;
         isRetryingJoin.value = true;
+        interviewDropHint.value = null;
 
         try {
             session.disconnect();
@@ -127,11 +240,17 @@
     }
 
     function handleSessionEnd(payload: SessionEndPayload) {
+        if (isEndingSession.value) {
+            return;
+        }
+
         if (!payload.interview_session_id) {
             session.disconnect();
 
             return;
         }
+
+        isEndingSession.value = true;
 
         router.post(route('user.feedback.analyze'), {
             interview_session_id: payload.interview_session_id,
@@ -146,6 +265,9 @@
             },
             onError: () => {
                 session.disconnect();
+            },
+            onFinish: () => {
+                isEndingSession.value = false;
             },
         });
     }
@@ -165,27 +287,10 @@
         },
         { immediate: true },
     );
-
-    const elapsed = ref(0);
-    let timerInterval: ReturnType<typeof setInterval> | null = null;
-
-    watch(
-        () => session.isConnected.value,
-        (connected) => {
-            if (connected && !timerInterval) {
-                timerInterval = setInterval(() => {
-                    elapsed.value += 1;
-                }, 1000);
-            } else if (!connected && timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-        },
-    );
 </script>
 
 <template>
-    <Head title="Start Interview Session" />
+    <Head title="Session" />
 
     <div v-if="showConnectModal" class="min-h-screen bg-background flex items-center justify-center p-6">
         <div class="text-center max-w-md" style="opacity: 1; transform: none">
@@ -198,10 +303,21 @@
                 </svg>
             </div>
 
+            <div v-if="interviewDropHint" class="mx-auto mb-4 max-w-md rounded-xl border border-amber-500/40 bg-amber-500/8 px-4 py-3 text-left text-sm text-foreground" role="status">
+                {{ interviewDropHint }}
+            </div>
+
             <h1 class="text-3xl font-display font-bold text-foreground mb-3">Ready to Begin?</h1>
             <p class="text-muted-foreground mb-2"><strong>{{ jobRole }}</strong> interview</p>
             <p class="text-sm text-muted-foreground mb-4">
                 You'll be interviewed by our AI interviewer who will ask {{ interviewTypeLabel }} questions.
+            </p>
+            <p class="mx-auto mb-6 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
+                Session pacing uses your
+                <TextLink class="underline" :href="route('user.profile.settings')">
+                    Interview preferences</TextLink>:
+                {{ effectiveDurationMinutes }} minutes for this profile.
+                Pace is approximate — wrap up calmly if you reach that window.
             </p>
 
             <div class="flex items-center justify-center gap-4 mb-8 text-sm text-muted-foreground">
@@ -249,7 +365,6 @@
     </div>
 
     <div v-if="!showConnectModal" class="interview-shell">
-        <!-- Interview Room (only rendered when connected) -->
         <LiveKitRoom
             v-if="session.token.value"
             :server-url="session.serverUrl"
@@ -265,12 +380,14 @@
                 :interview-session-id="session.interviewSessionId.value ?? 0"
                 @end="handleSessionEnd"
                 @retry-join="handleRetryJoin"
+                @connection-lost="handleInterviewConnectionLost"
             />
         </LiveKitRoom>
 
-        <!-- Placeholder when not connected -->
         <div v-else-if="!showConnectModal" class="flex min-h-screen items-center justify-center">
-            <p class="text-muted-foreground">Connecting...</p>
+            <svg stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" viewBox="0 0 16 16" class="spinner animate-spin" height="4em" width="4em" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 0c-4.355 0-7.898 3.481-7.998 7.812 0.092-3.779 2.966-6.812 6.498-6.812 3.59 0 6.5 3.134 6.5 7 0 0.828 0.672 1.5 1.5 1.5s1.5-0.672 1.5-1.5c0-4.418-3.582-8-8-8zM8 16c4.355 0 7.898-3.481 7.998-7.812-0.092 3.779-2.966 6.812-6.498 6.812-3.59 0-6.5-3.134-6.5-7 0-0.828-0.672-1.5-1.5-1.5s-1.5 0.672-1.5 1.5c0 4.418 3.582 8 8 8z"></path>
+            </svg>
         </div>
     </div>
 </template>

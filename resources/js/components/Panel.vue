@@ -7,7 +7,7 @@
 </script>
 
 <template>
-    <div class="surface rounded-2xl p-6 shadow-xs">
+    <div class="surface rounded-2xl border border-hairline p-6 shadow-xs">
         <h3 class="text-base font-semibold tracking-tight">{{ title }}</h3>
         <ul class="mt-5 space-y-3">
             <li

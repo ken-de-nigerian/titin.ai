@@ -34,6 +34,13 @@ interface InterviewSessionRepositoryContract
     public function recentCompletedForUser(User $user, int $limit = 5): Collection;
 
     /**
+     * All completed sessions for the user, oldest → newest by session timeline.
+     *
+     * @return Collection<int, InterviewSession>
+     */
+    public function allCompletedSessionsChronologicalForUser(User $user): Collection;
+
+    /**
      * @return array{
      *   total_sessions: int,
      *   average_score: float|null,

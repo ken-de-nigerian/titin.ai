@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserCvStatus;
 use App\Jobs\ProcessUserCvJob;
 use App\Models\User;
 use App\Models\UserCv;
@@ -27,6 +28,32 @@ it('allows CV upload during onboarding', function () {
     $response->assertCreated();
     $this->assertDatabaseCount('user_cvs', 1);
     Queue::assertPushed(ProcessUserCvJob::class);
+});
+
+it('allows removing an uploaded CV during onboarding', function (): void {
+    Storage::fake('public');
+
+    $user = User::factory()->create([
+        'onboarding_completed_at' => null,
+    ]);
+
+    $cv = UserCv::query()->create([
+        'user_id' => $user->id,
+        'path' => 'resumes/1/sample.pdf',
+        'client_original_name' => 'resume.pdf',
+        'original_name' => 'resume_unique.pdf',
+        'mime' => 'application/pdf',
+        'size' => 1200,
+        'status' => UserCvStatus::Parsed,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($user)
+        ->deleteJson(route('user.onboarding.cv.items.destroy', $cv))
+        ->assertSuccessful()
+        ->assertJsonPath('message', 'CV removed.');
+
+    expect(UserCv::query()->whereKey($cv->id)->exists())->toBeFalse();
 });
 
 it('shows only the latest uploaded CV on onboarding', function () {

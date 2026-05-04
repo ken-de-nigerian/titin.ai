@@ -25,6 +25,7 @@ use Illuminate\Notifications\Notifiable;
  * @property mixed $resume_path
  * @property mixed $name
  * @property mixed $prefers_concise_feedback
+ * @property int|null $interview_duration_minutes
  */
 #[Fillable([
     'name',
@@ -36,6 +37,7 @@ use Illuminate\Notifications\Notifiable;
     'interview_type',
     'seniority_level',
     'prefers_concise_feedback',
+    'interview_duration_minutes',
     'resume_path',
     'profile_photo_path',
     'onboarding_completed_at',
@@ -59,6 +61,7 @@ final class User extends Authenticatable implements MustVerifyEmail
             'role' => UserRole::class,
             'status' => UserStatus::class,
             'prefers_concise_feedback' => 'boolean',
+            'interview_duration_minutes' => 'integer',
             'onboarding_completed_at' => 'datetime',
         ];
     }

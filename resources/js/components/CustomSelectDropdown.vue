@@ -54,16 +54,16 @@
         return displayError.value !== '';
     });
 
+    const normalizeSelectValue = (v: string): string => v.trim().toLowerCase();
+
     const selectedOption = computed(() => {
         if (!props.modelValue && props.modelValue !== '0') {
             return null;
         }
 
-        const modelValue = String(props.modelValue).trim();
+        const modelNorm = normalizeSelectValue(String(props.modelValue));
         const found = props.options.find((opt) => {
-            const optValue = String(opt.value).trim();
-
-            return optValue === modelValue;
+            return normalizeSelectValue(String(opt.value)) === modelNorm;
         });
 
         return found || null;
@@ -165,14 +165,14 @@
                         role="menuitem"
                         tabindex="-1"
                         class="group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground"
-                        :class="String(option.value).trim() === String(modelValue ?? '').trim() ? 'bg-accent font-medium text-accent-foreground' : ''"
-                        :aria-selected="String(option.value).trim() === String(modelValue ?? '').trim()"
+                        :class="normalizeSelectValue(String(option.value)) === normalizeSelectValue(String(modelValue ?? '')) ? 'bg-accent font-medium text-accent-foreground' : ''"
+                        :aria-selected="normalizeSelectValue(String(option.value)) === normalizeSelectValue(String(modelValue ?? ''))"
                         @click="selectOption(option, close)">
                         <slot name="option" :option="option">
                             <span>{{ option.label }}</span>
                         </slot>
                         <Check
-                            v-if="String(option.value).trim() === String(modelValue ?? '').trim()"
+                            v-if="normalizeSelectValue(String(option.value)) === normalizeSelectValue(String(modelValue ?? ''))"
                             class="ml-auto size-4 text-current"
                             aria-hidden="true"
                         />

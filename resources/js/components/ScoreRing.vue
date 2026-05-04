@@ -1,10 +1,17 @@
 <script setup lang="ts">
     import { Check } from 'lucide-vue-next';
-    import { ref } from 'vue';
+    import { ref, withDefaults } from 'vue';
 
-    const props = defineProps<{
-        value: number;
-    }>();
+    const props = withDefaults(
+        defineProps<{
+            value: number;
+            /** Progress + icon color (Tailwind text-* so SVG uses currentColor) */
+            strokeClass?: string;
+        }>(),
+        {
+            strokeClass: 'text-brand',
+        },
+    );
 
     const r = 28;
     const c = 2 * Math.PI * r;
@@ -36,7 +43,7 @@
                 :cy="36"
                 :r="r"
                 stroke="currentColor"
-                class="text-brand"
+                :class="props.strokeClass"
                 stroke-width="6"
                 fill="none"
                 stroke-linecap="round"
@@ -46,7 +53,7 @@
             />
         </svg>
         <div class="absolute inset-0 grid place-items-center">
-            <Check class="h-5 w-5 text-brand" />
+            <Check class="h-5 w-5" :class="props.strokeClass" />
         </div>
     </div>
 </template>

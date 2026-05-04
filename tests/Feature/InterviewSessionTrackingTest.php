@@ -46,6 +46,8 @@ it('creates an interview session when issuing a token', function () {
     expect($session?->user_id)->toBe($user->id);
     expect($session?->status)->toBe('started');
     expect($session?->room_name)->toBe('room-abc123');
+    expect($session?->planned_duration_seconds)->toBe(1500);
+    expect($session?->question_count)->toBe(10);
 });
 
 it('completes an interview session and redirects to persisted feedback page', function () {

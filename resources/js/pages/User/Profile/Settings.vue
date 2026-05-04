@@ -3,11 +3,12 @@
     import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
     import ActionButton from '@/components/ActionButton.vue';
-    import AppLayout from '@/layouts/AppLayout.vue';
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import FormInput from '@/components/FormInput.vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
     import { useRoute } from '@/composables/useRoute';
+    import AppLayout from '@/layouts/AppLayout.vue';
+    import { resolveInterviewTypeLabel } from '@/utils/interviewType';
 
     type AuthUser = {
         id: number;
@@ -18,6 +19,7 @@
         interview_type?: string | null;
         seniority_level?: string | null;
         prefers_concise_feedback?: boolean;
+        interview_duration_minutes?: number | null;
         profile_photo_url?: string | null;
     };
 
@@ -28,10 +30,15 @@
     const interviewSettings = computed(() => ((page.props as any).settings?.interview ?? {}) as {
         default_type?: string;
         types?: Record<string, string>;
+        default_duration_minutes?: number;
+        min_duration_minutes?: number;
+        max_duration_minutes?: number;
+        duration_presets?: number[];
     });
     const interviewTypeOptions = computed(() =>
         Object.entries(interviewSettings.value.types ?? {}).map(([value, label]) => ({ value, label })),
     );
+
     const fallbackInterviewType = computed(
         () => interviewSettings.value.default_type ?? interviewTypeOptions.value[0]?.value ?? 'mixed',
     );
@@ -49,15 +56,77 @@
         () => senioritySettings.value.default_level ?? seniorityOptions.value[0]?.value ?? 'mid_level',
     );
 
+    const fallbackInterviewDurationMinutes = computed(() =>
+        Number.isFinite(Number(interviewSettings.value.default_duration_minutes))
+            ? Number(interviewSettings.value.default_duration_minutes)
+            : 25,
+    );
+
+    const durationOptions = computed(() => {
+        const min = Number(interviewSettings.value.min_duration_minutes) || 5;
+        const max = Number(interviewSettings.value.max_duration_minutes) || 120;
+        const presets = (interviewSettings.value.duration_presets ?? [])
+            .map((n) => Number(n))
+            .filter((n) => Number.isFinite(n) && n >= min && n <= max);
+
+        if (presets.length > 0) {
+            return [...new Set(presets)].sort((a, b) => a - b);
+        }
+
+        const out: number[] = [];
+
+        for (let m = min; m <= Math.min(max, min + 12 * 5); m += 5) {
+            out.push(m);
+        }
+
+        return out.length > 0 ? out : [min, max];
+    });
+
+    /** Includes the user's saved value so the dropdown stays valid even if presets change. */
+    const durationOptionsForPreferences = computed(() => {
+        const base = [...durationOptions.value];
+        const raw = user.value?.interview_duration_minutes;
+
+        if (raw !== null && raw !== undefined && Number.isFinite(Number(raw))) {
+            const n = Math.round(Number(raw));
+
+            if (!base.includes(n)) {
+                base.push(n);
+            }
+        }
+
+        return [...new Set(base)].sort((a, b) => a - b);
+    });
+
+    const durationSelectOptionsForPreferences = computed(() =>
+        durationOptionsForPreferences.value.map((m) => ({
+            value: String(m),
+            label: `${String(m)} minutes`,
+        })),
+    );
+
+    const durationPreferenceLabel = computed(() => {
+        const raw = user.value?.interview_duration_minutes;
+
+        if (raw !== null && raw !== undefined && Number.isFinite(Number(raw))) {
+            return `${String(Math.round(Number(raw)))} minutes`;
+        }
+
+        return `${String(fallbackInterviewDurationMinutes.value)} minutes (default)`;
+    });
+
     const displayName = computed(() => user.value?.name?.trim() || 'Your account');
     const displayEmail = computed(() => user.value?.email?.trim() || 'No email');
 
     const initials = computed(() => {
         const n = displayName.value.trim();
+
         if (!n || n === 'Your account') {
             return '?';
         }
+
         const parts = n.split(/\s+/).filter(Boolean);
+
         if (parts.length >= 2) {
             return `${parts[0]?.charAt(0) ?? ''}${parts[1]?.charAt(0) ?? ''}`.toUpperCase();
         }
@@ -65,11 +134,12 @@
         return n.slice(0, 2).toUpperCase();
     });
 
-    const interviewLabel = computed(() => {
-        const raw = user.value?.interview_type ?? fallbackInterviewType.value;
-        const label = interviewSettings.value.types?.[raw];
-        return label ?? raw.replace(/_/g, ' ');
-    });
+    const interviewLabel = computed(() =>
+        resolveInterviewTypeLabel(
+            user.value?.interview_type ?? fallbackInterviewType.value,
+            interviewSettings.value.types,
+        ),
+    );
 
     const conciseFeedbackLabel = computed(() =>
         user.value?.prefers_concise_feedback ? 'Enabled' : 'Disabled',
@@ -102,11 +172,18 @@
         interview_type: string;
         seniority_level: string;
         prefers_concise_feedback: boolean;
+        interview_duration_minutes: string;
     }>({
         job_role: user.value?.job_role ?? '',
         interview_type: user.value?.interview_type ?? fallbackInterviewType.value,
         seniority_level: user.value?.seniority_level ?? fallbackSeniorityLevel.value,
         prefers_concise_feedback: Boolean(user.value?.prefers_concise_feedback),
+        interview_duration_minutes: String(
+            user.value?.interview_duration_minutes != null
+            && Number.isFinite(Number(user.value.interview_duration_minutes))
+                ? Math.round(Number(user.value.interview_duration_minutes))
+                : fallbackInterviewDurationMinutes.value,
+        ),
     });
 
     const passwordForm = useForm<{
@@ -189,6 +266,37 @@
         },
     );
 
+    watch(
+        durationOptionsForPreferences,
+        (opts) => {
+            if (opts.length === 0) {
+                return;
+            }
+
+            const parsed = Number.parseInt(preferencesForm.interview_duration_minutes, 10);
+
+            if (!Number.isFinite(parsed) || !opts.includes(parsed)) {
+                const fallback =
+                    opts.find((n) => n >= parsed) ?? opts.find((n) => n <= parsed) ?? opts[opts.length - 1] ?? 25;
+
+                preferencesForm.interview_duration_minutes = String(fallback);
+                preferencesForm.defaults('interview_duration_minutes', String(fallback));
+            }
+        },
+        { immediate: true },
+    );
+
+    watch(
+        () => user.value?.interview_duration_minutes,
+        (v) => {
+            if (v !== null && v !== undefined && Number.isFinite(Number(v))) {
+                const next = String(Math.round(Number(v)));
+                preferencesForm.interview_duration_minutes = next;
+                preferencesForm.defaults('interview_duration_minutes', next);
+            }
+        },
+    );
+
     function openProfileModal(): void {
         profileModalOpen.value = true;
     }
@@ -251,6 +359,7 @@
         clearPhotoPreview();
         selectedPhotoName.value = null;
         profileForm.profile_photo = null;
+
         if (photoInputRef.value) {
             photoInputRef.value.value = '';
         }
@@ -423,6 +532,16 @@
                         </div>
                         <div class="mt-2 text-sm text-foreground sm:mt-0 sm:w-72 sm:text-right">
                             {{ seniorityLabel }}
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-4 sm:flex sm:items-start sm:justify-between sm:gap-6">
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-foreground">Target session length</p>
+                            <p class="mt-0.5 text-[11px] text-muted-foreground">Default pacing for timed interview sessions.</p>
+                        </div>
+                        <div class="mt-2 text-sm text-foreground sm:mt-0 sm:w-72 sm:text-right">
+                            {{ durationPreferenceLabel }}
                         </div>
                     </div>
 
@@ -693,6 +812,26 @@
                     </CustomSelectDropdown>
                     <p v-if="preferencesForm.errors.seniority_level" class="mt-1 text-xs text-destructive">
                         {{ preferencesForm.errors.seniority_level }}
+                    </p>
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-muted-foreground" for="modal-interview-duration">
+                        Target session length
+                    </label>
+                    <CustomSelectDropdown
+                        id="modal-interview-duration"
+                        v-model="preferencesForm.interview_duration_minutes"
+                        :options="durationSelectOptionsForPreferences"
+                        placeholder="Select session length"
+                    >
+                        <template #default="{ selectedLabel }">{{ selectedLabel }}</template>
+                    </CustomSelectDropdown>
+                    <p class="mt-1.5 text-[11px] text-muted-foreground">
+                        Applies to new interview connections. Pace is approximate.
+                    </p>
+                    <p v-if="preferencesForm.errors.interview_duration_minutes" class="mt-1 text-xs text-destructive">
+                        {{ preferencesForm.errors.interview_duration_minutes }}
                     </p>
                 </div>
 

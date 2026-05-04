@@ -60,6 +60,16 @@ final class EloquentInterviewSessionRepository implements InterviewSessionReposi
             ->get();
     }
 
+    public function allCompletedSessionsChronologicalForUser(User $user): Collection
+    {
+        return InterviewSession::query()
+            ->whereBelongsTo($user)
+            ->where('status', 'completed')
+            ->orderByRaw('COALESCE(ended_at, started_at, created_at) asc')
+            ->orderBy('id')
+            ->get(['id', 'feedback_json', 'ended_at', 'started_at', 'created_at']);
+    }
+
     public function statsForUser(User $user): array
     {
         $sessions = InterviewSession::query()

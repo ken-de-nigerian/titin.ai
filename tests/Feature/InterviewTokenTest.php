@@ -35,6 +35,8 @@ it('issues an interview token for authenticated onboarded users', function () {
     $response->assertOk()->assertJson([
         'token' => 'lk_test_token',
         'room' => 'room-abc123',
+        'question_count' => 10,
+        'planned_duration_seconds' => 1500,
     ]);
 
     Http::assertSent(function (Request $request): bool {
@@ -44,11 +46,13 @@ it('issues an interview token for authenticated onboarded users', function () {
         return $request->url() === 'http://localhost:5001/internal/issue-token'
             && $request->hasHeader('X-Internal-Token', 'test-secret')
             && is_array($promptContext)
+            && Arr::get($payload, 'planned_duration_seconds') === 1500
             && Arr::get($promptContext, 'schema_version') === 'prompt_context.v1'
             && Arr::get($promptContext, 'interview.mode') === 'simulation'
             && Arr::get($promptContext, 'interview.type') === 'technical'
             && is_string(Arr::get($promptContext, 'interview.type_context', ''))
-            && Arr::get($promptContext, 'session.question_count') === 6;
+            && Arr::get($promptContext, 'session.question_count') === 10
+            && Arr::get($promptContext, 'session.planned_duration_seconds') === 1500;
     });
 });
 

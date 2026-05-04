@@ -22,6 +22,12 @@ it('builds prompt context from config user preferences and parsed cv profile', f
         ],
         'settings.interview.default_type' => 'mixed',
         'settings.interview.default_question_count' => 6,
+        'settings.interview.default_duration_minutes' => 25,
+        'settings.interview.min_duration_minutes' => 5,
+        'settings.interview.max_duration_minutes' => 120,
+        'settings.interview.minutes_per_primary_question' => 2.5,
+        'settings.interview.primary_question_count_min' => 4,
+        'settings.interview.primary_question_count_max' => 20,
         'settings.interview.types' => [
             'technical' => 'Technical Knowledge',
             'mixed' => 'Mixed / Adaptive Mode',
@@ -66,6 +72,7 @@ it('builds prompt context from config user preferences and parsed cv profile', f
         interviewType: 'technical',
         questionCount: 8,
         interviewMode: 'simulation',
+        durationMinutes: null,
     );
 
     $context = app(InterviewPromptContextService::class)->build($user, $data);
@@ -77,6 +84,7 @@ it('builds prompt context from config user preferences and parsed cv profile', f
         ->and(Arr::get($context, 'interview.type_label'))->toBe('Technical Knowledge')
         ->and(Arr::get($context, 'interview.type_context'))->toBe('Focus on technical depth and concrete trade-offs.')
         ->and(Arr::get($context, 'session.question_count'))->toBe(8)
+        ->and(Arr::get($context, 'session.planned_duration_seconds'))->toBe(1500)
         ->and(Arr::get($context, 'session.concise_feedback'))->toBeTrue()
         ->and(Arr::get($context, 'cv.has_uploaded_cv'))->toBeTrue()
         ->and(Arr::get($context, 'cv.has_parsed_profile'))->toBeTrue()
@@ -93,6 +101,12 @@ it('falls back safely for unknown interview type and out-of-range question count
         ],
         'settings.interview.default_type' => 'mixed',
         'settings.interview.default_question_count' => 6,
+        'settings.interview.default_duration_minutes' => 25,
+        'settings.interview.min_duration_minutes' => 5,
+        'settings.interview.max_duration_minutes' => 120,
+        'settings.interview.minutes_per_primary_question' => 2.5,
+        'settings.interview.primary_question_count_min' => 4,
+        'settings.interview.primary_question_count_max' => 20,
         'settings.interview.types' => [
             'technical' => 'Technical Knowledge',
             'mixed' => 'Mixed / Adaptive Mode',
@@ -114,6 +128,7 @@ it('falls back safely for unknown interview type and out-of-range question count
         interviewType: 'unknown_custom_type',
         questionCount: 99,
         interviewMode: 'unknown_mode',
+        durationMinutes: null,
     );
 
     $context = app(InterviewPromptContextService::class)->build($user, $data);
@@ -123,6 +138,80 @@ it('falls back safely for unknown interview type and out-of-range question count
         ->and(Arr::get($context, 'interview.type'))->toBe('mixed')
         ->and(Arr::get($context, 'interview.type_context'))->toBe('Blend technical and behavioral questions.')
         ->and(Arr::get($context, 'session.question_count'))->toBe(20)
+        ->and(Arr::get($context, 'session.planned_duration_seconds'))->toBe(1500)
         ->and(Arr::get($context, 'cv.has_uploaded_cv'))->toBeFalse()
         ->and(Arr::get($context, 'cv.has_parsed_profile'))->toBeFalse();
+});
+
+it('respects explicit interview duration from token data', function () {
+    config([
+        'settings.interview.default_mode' => 'simulation',
+        'settings.interview.modes' => ['simulation' => 'Simulation'],
+        'settings.interview.default_type' => 'mixed',
+        'settings.interview.types' => ['mixed' => 'Mixed'],
+        'settings.interview.type_context' => ['mixed' => 'Blend modes.'],
+        'settings.interview.default_question_count' => 6,
+        'settings.interview.default_duration_minutes' => 25,
+        'settings.interview.min_duration_minutes' => 5,
+        'settings.interview.max_duration_minutes' => 120,
+        'settings.interview.minutes_per_primary_question' => 2.5,
+        'settings.interview.primary_question_count_min' => 4,
+        'settings.interview.primary_question_count_max' => 20,
+    ]);
+
+    $user = User::factory()->create([
+        'job_role' => 'Engineer',
+        'interview_type' => 'mixed',
+        'prefers_concise_feedback' => false,
+    ]);
+
+    $data = new IssueInterviewTokenData(
+        jobRole: null,
+        interviewType: null,
+        questionCount: null,
+        interviewMode: null,
+        durationMinutes: 40,
+    );
+
+    $context = app(InterviewPromptContextService::class)->build($user, $data);
+
+    expect(Arr::get($context, 'session.planned_duration_seconds'))->toBe(2400)
+        ->and(Arr::get($context, 'session.question_count'))->toBe(16);
+});
+
+it('uses the user preferred interview duration when token data omits duration', function () {
+    config([
+        'settings.interview.default_mode' => 'simulation',
+        'settings.interview.modes' => ['simulation' => 'Simulation'],
+        'settings.interview.default_type' => 'mixed',
+        'settings.interview.types' => ['mixed' => 'Mixed'],
+        'settings.interview.type_context' => ['mixed' => 'Blend modes.'],
+        'settings.interview.default_question_count' => 6,
+        'settings.interview.default_duration_minutes' => 25,
+        'settings.interview.min_duration_minutes' => 5,
+        'settings.interview.max_duration_minutes' => 120,
+        'settings.interview.minutes_per_primary_question' => 2.5,
+        'settings.interview.primary_question_count_min' => 4,
+        'settings.interview.primary_question_count_max' => 20,
+    ]);
+
+    $user = User::factory()->create([
+        'job_role' => 'Engineer',
+        'interview_type' => 'mixed',
+        'prefers_concise_feedback' => false,
+        'interview_duration_minutes' => 35,
+    ]);
+
+    $data = new IssueInterviewTokenData(
+        jobRole: null,
+        interviewType: null,
+        questionCount: null,
+        interviewMode: null,
+        durationMinutes: null,
+    );
+
+    $context = app(InterviewPromptContextService::class)->build($user, $data);
+
+    expect(Arr::get($context, 'session.planned_duration_seconds'))->toBe(2100)
+        ->and(Arr::get($context, 'session.question_count'))->toBe(14);
 });

@@ -59,6 +59,11 @@ final class InterviewTokenController extends Controller
             'token' => $result['token'],
             'room' => $result['room'],
             'interview_session_id' => $session->id,
+            'question_count' => $session->question_count,
+            'planned_duration_seconds' => (int) (
+                $session->planned_duration_seconds
+                ?? max(300, (int) config('settings.interview.default_duration_minutes', 25) * 60)
+            ),
         ]);
     }
 }

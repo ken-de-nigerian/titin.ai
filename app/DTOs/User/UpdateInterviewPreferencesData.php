@@ -11,10 +11,11 @@ final readonly class UpdateInterviewPreferencesData
         public string $interviewType,
         public string $seniorityLevel,
         public bool $prefersConciseFeedback,
+        public int $interviewDurationMinutes,
     ) {}
 
     /**
-     * @param  array{job_role?: string|null, interview_type: string, seniority_level: string, prefers_concise_feedback: bool}  $validated
+     * @param  array{job_role?: string|null, interview_type: string, seniority_level: string, prefers_concise_feedback: bool, interview_duration_minutes: int}  $validated
      */
     public static function fromValidated(array $validated): self
     {
@@ -23,6 +24,7 @@ final readonly class UpdateInterviewPreferencesData
             interviewType: $validated['interview_type'],
             seniorityLevel: $validated['seniority_level'],
             prefersConciseFeedback: (bool) $validated['prefers_concise_feedback'],
+            interviewDurationMinutes: (int) $validated['interview_duration_minutes'],
         );
     }
 }

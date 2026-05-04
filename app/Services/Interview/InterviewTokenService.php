@@ -36,7 +36,7 @@ final readonly class InterviewTokenService
         $candidate = $promptContext['candidate'];
         /** @var array{mode:string,type:string} $interview */
         $interview = $promptContext['interview'];
-        /** @var array{question_count:int,concise_feedback:bool} $session */
+        /** @var array{question_count:int,planned_duration_seconds:int,concise_feedback:bool} $session */
         $session = $promptContext['session'];
         /** @var array{context_notes:string} $instructions */
         $instructions = $promptContext['instructions'];
@@ -57,21 +57,22 @@ final readonly class InterviewTokenService
                 'interview_mode' => $interview['mode'],
                 'interview_type' => $interview['type'],
                 'question_count' => $session['question_count'],
+                'planned_duration_seconds' => $session['planned_duration_seconds'],
                 'concise_feedback' => $session['concise_feedback'],
                 'context_notes' => $instructions['context_notes'],
                 'prompt_context' => $promptContext,
             ])
             ->throw();
 
-        /** @var mixed $payload */
-        $payload = $response->json();
-        if (! is_array($payload) || ! isset($payload['token'], $payload['room'])) {
+        /** @var mixed $body */
+        $body = $response->json();
+        if (! is_array($body) || ! isset($body['token'], $body['room'])) {
             throw new RuntimeException('Token server returned an invalid response.');
         }
 
         return [
-            'token' => (string) $payload['token'],
-            'room' => (string) $payload['room'],
+            'token' => (string) $body['token'],
+            'room' => (string) $body['room'],
             'prompt_context' => $promptContext,
         ];
     }

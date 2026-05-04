@@ -26,6 +26,7 @@ return new class extends Migration
             $table->timestamp('onboarding_completed_at')->nullable();
             $table->string('profile_photo_path')->nullable();
             $table->boolean('prefers_concise_feedback')->default(false);
+            $table->unsignedSmallInteger('interview_duration_minutes')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

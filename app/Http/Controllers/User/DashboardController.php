@@ -27,26 +27,36 @@ final class DashboardController extends Controller
             'last_score' => null,
         ] : $this->interviewSessions->stats($user);
 
+        $scoreTrajectory = $user === null
+            ? ['points' => [], 'trend' => null]
+            : $this->interviewSessions->scoreTrajectoryForDashboard($user);
+
         $recentSessions = $user === null
             ? []
             : $this->interviewSessions
-                ->recentCompletedSessions($user, 5)
-                ->map(fn (InterviewSession $session): array => [
-                    'id' => $session->id,
-                    'job_role' => $session->job_role ?? 'Interview session',
-                    'interview_type' => $session->interview_type ?? 'mixed',
-                    'duration_seconds' => (int) $session->duration_seconds,
-                    'overall_score' => is_array($session->feedback_json) && is_numeric($session->feedback_json['overall_score'] ?? null)
-                        ? round((float) $session->feedback_json['overall_score'], 1)
-                        : null,
-                    'ended_at' => $session->ended_at?->toIso8601String(),
-                ])
+                ->recentCompletedSessions($user)
+                ->map(function (InterviewSession $session): array {
+                    $endedAt = $session->ended_at;
+
+                    return [
+                        'id' => $session->id,
+                        'job_role' => $session->job_role ?? 'Interview session',
+                        'interview_type' => $session->interview_type ?? 'mixed',
+                        'duration_seconds' => (int) $session->duration_seconds,
+                        'overall_score' => is_array($session->feedback_json) && is_numeric($session->feedback_json['overall_score'] ?? null)
+                            ? round((float) $session->feedback_json['overall_score'], 1)
+                            : null,
+                        'ended_at' => $endedAt?->toIso8601String(),
+                        'ended_at_human' => $endedAt?->timezone((string) config('app.timezone', 'UTC'))->diffForHumans(),
+                    ];
+                })
                 ->values()
                 ->all();
 
         return Inertia::render('User/Dashboard', [
             'sessionStats' => $stats,
             'recentSessions' => $recentSessions,
+            'scoreTrajectory' => $scoreTrajectory,
         ]);
     }
 }

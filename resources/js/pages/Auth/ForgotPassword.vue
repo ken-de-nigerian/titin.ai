@@ -60,7 +60,7 @@
 
                     <p class="mt-8 text-center text-sm text-muted-foreground">
                         Remembered your password?
-                        <TextLink :href="route('login')">Back to sign in</TextLink>
+                        <TextLink :href="route('login')" class="font-medium text-brand hover:underline">Back to sign in</TextLink>
                     </p>
                 </div>
             </div>

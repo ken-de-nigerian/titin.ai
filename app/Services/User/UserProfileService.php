@@ -46,6 +46,7 @@ final readonly class UserProfileService
             interviewType: $data->interviewType,
             seniorityLevel: $data->seniorityLevel,
             prefersConciseFeedback: $data->prefersConciseFeedback,
+            interviewDurationMinutes: $data->interviewDurationMinutes,
         );
     }
 

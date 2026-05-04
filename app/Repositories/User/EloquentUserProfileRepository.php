@@ -37,12 +37,14 @@ final class EloquentUserProfileRepository implements UserProfileRepositoryContra
         string $interviewType,
         string $seniorityLevel,
         bool $prefersConciseFeedback,
+        int $interviewDurationMinutes,
     ): User {
         $user->forceFill([
             'job_role' => $jobRole,
             'interview_type' => $interviewType,
             'seniority_level' => $seniorityLevel,
             'prefers_concise_feedback' => $prefersConciseFeedback,
+            'interview_duration_minutes' => $interviewDurationMinutes,
         ])->save();
 
         return $user->refresh();

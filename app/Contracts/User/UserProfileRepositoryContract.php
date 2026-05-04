@@ -22,6 +22,7 @@ interface UserProfileRepositoryContract
         string $interviewType,
         string $seniorityLevel,
         bool $prefersConciseFeedback,
+        int $interviewDurationMinutes,
     ): User;
 
     public function updatePassword(

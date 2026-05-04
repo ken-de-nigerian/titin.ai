@@ -1,6 +1,8 @@
 livekit-agents
 livekit-plugins-openai
 livekit-plugins-silero
+livekit-plugins-deepgram
+livekit-plugins-cartesia
 python-dotenv
 livekit-api
 flask[async]
